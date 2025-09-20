@@ -1,0 +1,617 @@
+# CRM Admin Real Estate Project - Cursor Rules
+
+You are an expert React TypeScript developer specializing in modern web applications with clean architecture and best practices. Follow these rules strictly when working on the CRM Admin Real Estate project.
+
+## 🎯 Project Context
+
+- **Project**: CRM Admin for Real Estate Management
+- **Tech Stack**: React 18 + TypeScript + Shadcn UI + Tailwind CSS + React Hook Form + Zod
+- **Purpose**: Manage real estate projects, apartments, amenities, and project details
+- **Target**: Scalable, maintainable, responsive admin interface
+
+## 📁 Strict Folder Structure
+
+ALWAYS follow this exact structure:
+
+```
+src/
+├── components/
+│   ├── ui/                     # Shadcn UI components (DON'T MODIFY)
+│   ├── layout/                 # Layout components
+│   │   ├── AppLayout.tsx
+│   │   ├── Header.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── Breadcrumb.tsx
+│   ├── forms/                  # Form components only
+│   │   ├── ProjectForm.tsx
+│   │   ├── ApartmentForm.tsx
+│   │   ├── ProjectDetailForm.tsx
+│   │   └── AmenityForm.tsx
+│   ├── lists/                  # List/Table components only
+│   │   ├── ProjectList.tsx
+│   │   ├── ApartmentList.tsx
+│   │   ├── ProjectDetailList.tsx
+│   │   └── AmenityTree.tsx
+│   └── common/                 # Reusable UI components
+│       ├── LoadingSpinner.tsx
+│       ├── EmptyState.tsx
+│       └── ConfirmDialog.tsx
+├── pages/                      # Page components only
+│   ├── Dashboard.tsx
+│   ├── projects/
+│   │   ├── ProjectsPage.tsx
+│   │   └── ProjectDetailPage.tsx
+│   └── apartments/
+│       ├── ApartmentsPage.tsx
+│       └── ApartmentFormPage.tsx
+├── hooks/                      # Custom hooks only
+│   ├── useProjects.ts
+│   ├── useApartments.ts
+│   ├── useProjectDetails.ts
+│   └── useAmenities.ts
+├── lib/                        # Utilities & configurations
+│   ├── types.ts               # ALL TypeScript interfaces
+│   ├── utils.ts               # Utility functions
+│   ├── constants.ts           # App constants
+│   └── mockData.ts            # Mock data for development
+├── services/                   # API & data services
+│   └── api.ts                 # Mock API calls
+└── App.tsx                    # Main app component
+```
+
+## 🔍 TypeScript Rules
+
+### 1. Interface Definitions (lib/types.ts)
+
+ALWAYS define these EXACT interfaces:
+
+```typescript
+// Base Project Types
+export interface Project {
+  id: string;
+  name: string;
+  location: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProjectPayload {
+  name: string;
+  location: string;
+}
+
+// Project Detail Types
+export interface ProjectDetail {
+  id: string;
+  name: string;
+  data: string;
+  sortOrder: number;
+  projectId: string;
+}
+
+export interface CreateProjectDetailPayload {
+  name: string;
+  data: string;
+  sortOrder: number; // Frontend calculates this automatically
+  projectId: string;
+}
+
+// Amenity Types (Parent-Child Structure)
+export interface Amenity {
+  id: string;
+  name: string;
+  projectId: string;
+  parentId: string | null; // null = parent amenity
+  children?: Amenity[]; // for tree display
+}
+
+export interface CreateAmenityPayload {
+  name: string;
+  projectId: string;
+  parentId: string | null; // null for parent, parent ID for child
+}
+
+// Apartment Types (Complex Structure)
+export interface Apartment {
+  id: string;
+  name: string;
+  price: string;
+  detailedDescription: string;
+  highlights: string; // Joined by \n
+  area: string;
+  numberBedroom: string;
+  numberBathroom: string;
+  floor: string;
+  direction: string;
+  interior: string;
+  status: string;
+  projectId: string;
+  isSell: boolean; // true = sell, false = rent
+  alias: string;
+  files: string[];
+  createdAt: string;
+}
+
+export interface CreateApartmentPayload {
+  data: {
+    name: string;
+    price: string;
+    detailedDescription: string;
+    highlights: string; // Will be joined from array
+    area: string;
+    numberBedroom: string;
+    numberBathroom: string;
+    floor: string;
+    direction: string;
+    interior: string;
+    status: string;
+    projectId: string;
+    isSell: boolean;
+    alias: string;
+  };
+  file: string[]; // Array of file paths
+}
+```
+
+### 2. Strict Type Usage
+
+- NEVER use `any` type
+- ALWAYS import types from `lib/types.ts`
+- ALWAYS use interface instead of type for object definitions
+- ALWAYS add proper JSDoc comments for complex interfaces
+
+## 🎣 Custom Hooks Patterns
+
+### Hook Structure Template:
+
+```typescript
+import { useState, useEffect } from "react";
+import { InterfaceName, CreatePayloadName } from "../lib/types";
+import { mockDataName } from "../lib/mockData";
+
+export const useHookName = (optionalParam?: string) => {
+  const [data, setData] = useState<InterfaceName[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Simulate API call with 500ms delay
+    setTimeout(() => {
+      setData(mockDataName);
+      setLoading(false);
+    }, 500);
+  }, [optionalParam]);
+
+  const create = async (payload: CreatePayloadName) => {
+    console.log(`Creating ${entityName} with payload:`, payload);
+
+    try {
+      const newItem: InterfaceName = {
+        id: Date.now().toString(),
+        ...payload,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setData((prev) => [...prev, newItem]);
+      console.log(`Created ${entityName}:`, newItem);
+      return newItem;
+    } catch (err) {
+      setError(`Failed to create ${entityName}`);
+      throw err;
+    }
+  };
+
+  const update = async (id: string, payload: Partial<CreatePayloadName>) => {
+    console.log(`Updating ${entityName}:`, id, payload);
+    setData((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, ...payload, updatedAt: new Date().toISOString() }
+          : item
+      )
+    );
+  };
+
+  const remove = async (id: string) => {
+    console.log(`Deleting ${entityName}:`, id);
+    setData((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  return {
+    data,
+    loading,
+    error,
+    create,
+    update,
+    remove,
+  };
+};
+```
+
+### Required Console Logging:
+
+ALWAYS add console.log for debugging:
+
+```typescript
+console.log("🏗️ Creating project payload:", payload);
+console.log("🏠 Creating apartment payload:", payload);
+console.log("🏆 Creating amenity payload:", payload);
+console.log("📋 Creating project detail payload:", payload);
+console.log("✅ Created successfully:", result);
+console.log("❌ Error occurred:", error);
+```
+
+## 🎨 Component Development Rules
+
+### 1. Form Components
+
+ALWAYS use this pattern for forms:
+
+```typescript
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { TypeName, CreatePayloadName } from "../../lib/types";
+
+// ALWAYS define Zod schema for validation
+const schema = z.object({
+  // Define validation rules
+});
+
+type FormData = z.infer<typeof schema>;
+
+interface ComponentProps {
+  onSubmit: (data: CreatePayloadName) => void;
+  defaultValues?: Partial<CreatePayloadName>;
+  loading?: boolean;
+}
+
+const ComponentName = ({
+  onSubmit,
+  defaultValues,
+  loading,
+}: ComponentProps) => {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues,
+  });
+
+  const onFormSubmit = (data: FormData) => {
+    // Transform data if needed
+    console.log("Form submitted with data:", data);
+    onSubmit(transformedData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+      {/* Form fields with proper error handling */}
+    </form>
+  );
+};
+
+export default ComponentName;
+```
+
+### 2. Special Form Rules
+
+#### Apartment Form Highlights:
+
+```typescript
+// ALWAYS handle highlights as array then join with \n
+const { fields, append, remove } = useFieldArray({
+  control,
+  name: "highlights",
+});
+
+// In submit handler:
+const payload: CreateApartmentPayload = {
+  data: {
+    ...formData.data,
+    highlights: formData.highlights.filter((h) => h.trim()).join("\n"),
+  },
+  file: formData.file,
+};
+```
+
+#### Project Details sortOrder:
+
+```typescript
+// ALWAYS calculate sortOrder automatically
+const createProjectDetail = (payload: CreateProjectDetailPayload) => {
+  const maxOrder = Math.max(...existingDetails.map((d) => d.sortOrder), -1);
+  const newDetail = {
+    ...payload,
+    sortOrder: maxOrder + 1,
+  };
+  console.log("Auto-calculated sortOrder:", newDetail.sortOrder);
+};
+```
+
+#### Amenity Parent-Child Logic:
+
+```typescript
+// Parent amenity
+const parentPayload: CreateAmenityPayload = {
+  name: "Tiện ích thể thao",
+  projectId: "123",
+  parentId: null, // ALWAYS null for parent
+};
+
+// Child amenity
+const childPayload: CreateAmenityPayload = {
+  name: "Hồ bơi",
+  projectId: "123",
+  parentId: "456", // ALWAYS reference parent ID
+};
+```
+
+### 3. List Components
+
+ALWAYS include these features:
+
+- Loading skeleton
+- Empty state
+- Error handling
+- Responsive grid/table
+- Action buttons (Edit, Delete, View)
+
+### 4. Page Components
+
+ALWAYS follow this structure:
+
+```typescript
+import { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useCustomHook } from "../../hooks/useCustomHook";
+import ComponentName from "../../components/forms/ComponentName";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+
+const PageName = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { data, loading, create, error } = useCustomHook(id);
+
+  const handleSubmit = async (payload: PayloadType) => {
+    try {
+      await create(payload);
+      navigate("/success-route");
+    } catch (err) {
+      // Handle error
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <div className="text-red-600">Error: {error}</div>;
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Page Title</h1>
+      <ComponentName onSubmit={handleSubmit} />
+    </div>
+  );
+};
+
+export default PageName;
+```
+
+## 🎯 Styling Guidelines
+
+### 1. Tailwind CSS Classes
+
+ALWAYS use these patterns:
+
+```css
+/* Layout */
+.container {
+  @apply max-w-4xl mx-auto p-6;
+}
+.grid-responsive {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
+/* Forms */
+.form-container {
+  @apply space-y-6;
+}
+.form-group {
+  @apply space-y-2;
+}
+.form-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+/* States */
+.loading {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+.error {
+  @apply text-red-600 text-sm mt-1;
+}
+.success {
+  @apply text-green-600 text-sm mt-1;
+}
+```
+
+### 2. Responsive Breakpoints
+
+ALWAYS use mobile-first:
+
+```css
+/* Mobile first - default styles */
+.class-name {
+  @apply text-sm;
+}
+
+/* Tablet */
+.class-name {
+  @apply md:text-base;
+}
+
+/* Desktop */
+.class-name {
+  @apply lg:text-lg;
+}
+
+/* Large Desktop */
+.class-name {
+  @apply xl:text-xl;
+}
+```
+
+## 🚀 Development Workflow
+
+### 1. File Creation Order:
+
+1. Define interfaces in `lib/types.ts`
+2. Add mock data in `lib/mockData.ts`
+3. Create custom hook in `hooks/`
+4. Create form component in `components/forms/`
+5. Create list component in `components/lists/`
+6. Create page component in `pages/`
+7. Add route in `App.tsx`
+
+### 2. Testing Requirements:
+
+ALWAYS test these scenarios:
+
+- Form validation (empty fields, invalid data)
+- Loading states
+- Error handling
+- Responsive design (mobile, tablet, desktop)
+- Console logging (verify payloads match requirements)
+
+### 3. Code Quality Checks:
+
+Before committing, ensure:
+
+- [ ] No TypeScript errors
+- [ ] All console.log statements present for debugging
+- [ ] Responsive design tested
+- [ ] Form validation working
+- [ ] Loading states implemented
+- [ ] Error handling in place
+- [ ] Mock data realistic
+- [ ] Payload structures match requirements exactly
+
+## 🐛 Debug Requirements
+
+### Console Logging Rules:
+
+ALWAYS add these logs:
+
+```typescript
+// Hook operations
+console.log("🔧 Hook initialized with params:", params);
+console.log("📊 Data loaded:", data);
+console.log("❌ Error occurred:", error);
+
+// Form submissions
+console.log("📝 Form data received:", formData);
+console.log("🚀 Payload being sent:", payload);
+console.log("✅ Operation successful:", result);
+
+// API operations
+console.log("📡 API call:", method, endpoint, payload);
+console.log("📥 API response:", response);
+```
+
+### Payload Verification:
+
+ALWAYS verify these exact structures:
+
+```typescript
+// Project payload
+{
+  "name": "string",
+  "location": "string"
+}
+
+// Project detail payload
+{
+  "name": "string",
+  "data": "string",
+  "sortOrder": 0,  // Auto-calculated
+  "projectId": "uuid"
+}
+
+// Amenity payload
+{
+  "name": "string",
+  "projectId": "uuid",
+  "parentId": "uuid" | null  // null for parent
+}
+
+// Apartment payload
+{
+  "data": {
+    "name": "string",
+    "price": "string",
+    "detailedDescription": "string",
+    "highlights": "string",  // Joined with \n
+    "area": "string",
+    "numberBedroom": "string",
+    "numberBathroom": "string",
+    "floor": "string",
+    "direction": "string",
+    "interior": "string",
+    "status": "string",
+    "projectId": "uuid",
+    "isSell": boolean,  // true=sell, false=rent
+    "alias": "string"
+  },
+  "file": ["string"]  // Array of file paths
+}
+```
+
+## ❌ Never Do This:
+
+- DON'T use `any` type
+- DON'T modify files in `components/ui/`
+- DON'T create components outside designated folders
+- DON'T forget console.log for debugging
+- DON'T submit forms without payload verification
+- DON'T hardcode IDs (always use Date.now().toString())
+- DON'T forget responsive design
+- DON'T skip error handling
+- DON'T forget loading states
+- DON'T create custom styling (use Tailwind classes)
+
+## ✅ Always Do This:
+
+- DO use strict TypeScript with proper interfaces
+- DO add console.log for all operations
+- DO test responsive design
+- DO implement loading and error states
+- DO use React Hook Form with Zod validation
+- DO follow the exact folder structure
+- DO verify payload structures match requirements
+- DO use mock data for development
+- DO create reusable components
+- DO follow mobile-first responsive design
+
+## 🎯 Success Criteria:
+
+A feature is complete when:
+
+- [ ] TypeScript compiles without errors
+- [ ] All console logs show correct payload structures
+- [ ] Responsive design works on all devices
+- [ ] Form validation prevents invalid submissions
+- [ ] Loading states show during operations
+- [ ] Error handling provides user feedback
+- [ ] Mock data is realistic and complete
+- [ ] Component follows established patterns
+- [ ] Code is clean and well-commented
+
+
+
+Dùng Shadcn UI để tạo các component.

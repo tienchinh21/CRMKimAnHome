@@ -1,0 +1,671 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .break-words {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .prose {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .prose p {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+@layer base {
+  :root {
+    /* Modern Teal/Cyan theme - Professional and harmonious */
+    --background: 0 0% 100%; /* Pure white */
+    --foreground: 210 11% 15%; /* Dark blue-gray for text */
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 210 11% 15%; /* Dark blue-gray text on cards */
+    --popover: 0 0% 100%; /* White popovers */
+    --popover-foreground: 210 11% 15%; /* Dark blue-gray text on popovers */
+    --primary: 173 80% 40%; /* Teal primary */
+    --primary-foreground: 0 0% 98%; /* White text on primary */
+    --secondary: 173 30% 95%; /* Very light teal */
+    --secondary-foreground: 210 11% 15%; /* Dark blue-gray text on secondary */
+    --muted: 173 20% 96%; /* Light teal for muted elements */
+    --muted-foreground: 210 11% 45%; /* Medium blue-gray for muted text */
+    --accent: 173 50% 90%; /* Light teal accent */
+    --accent-foreground: 210 11% 15%; /* Dark blue-gray text on accent */
+    --destructive: 0 84% 60%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 98%; /* White text on destructive */
+    --success: 142 76% 36%; /* Green for success */
+    --success-foreground: 0 0% 98%; /* White text on success */
+    --warning: 38 92% 50%; /* Amber for warning */
+    --warning-foreground: 0 0% 98%; /* White text on warning */
+    --info: 199 89% 48%; /* Blue for info */
+    --info-foreground: 0 0% 98%; /* White text on info */
+    --border: 173 20% 88%; /* Light teal borders */
+    --input: 173 20% 88%; /* Light teal input borders */
+    --ring: 173 80% 40%; /* Teal focus ring */
+    --radius: 0.75rem; /* Slightly larger border radius for modern look */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Text truncation utilities */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  /* Scrollbar utilities */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom scrollbar for modern look */
+  .scrollbar-modern::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 3px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground));
+  }
+
+  /* Modern Teal/Cyan color utilities */
+  .bg-pure-white {
+    background-color: #ffffff;
+  }
+
+  .bg-pure-black {
+    background-color: #1a202c;
+  }
+
+  .text-pure-white {
+    color: #ffffff;
+  }
+
+  .text-pure-black {
+    color: #1a202c;
+  }
+
+  .border-pure-black {
+    border-color: #1a202c;
+  }
+
+  .border-pure-white {
+    border-color: #ffffff;
+  }
+
+  /* Teal/Cyan color palette */
+  .bg-teal-50 {
+    background-color: #f0fdfa;
+  }
+
+  .bg-teal-100 {
+    background-color: #ccfbf1;
+  }
+
+  .bg-teal-200 {
+    background-color: #99f6e4;
+  }
+
+  .bg-teal-300 {
+    background-color: #5eead4;
+  }
+
+  .bg-teal-400 {
+    background-color: #2dd4bf;
+  }
+
+  .bg-teal-500 {
+    background-color: #14b8a6;
+  }
+
+  .bg-teal-600 {
+    background-color: #0d9488;
+  }
+
+  .bg-teal-700 {
+    background-color: #0f766e;
+  }
+
+  .bg-teal-800 {
+    background-color: #115e59;
+  }
+
+  .bg-teal-900 {
+    background-color: #134e4a;
+  }
+
+  .text-teal-50 {
+    color: #f0fdfa;
+  }
+
+  .text-teal-100 {
+    color: #ccfbf1;
+  }
+
+  .text-teal-200 {
+    color: #99f6e4;
+  }
+
+  .text-teal-300 {
+    color: #5eead4;
+  }
+
+  .text-teal-400 {
+    color: #2dd4bf;
+  }
+
+  .text-teal-500 {
+    color: #14b8a6;
+  }
+
+  .text-teal-600 {
+    color: #0d9488;
+  }
+
+  .text-teal-700 {
+    color: #0f766e;
+  }
+
+  .text-teal-800 {
+    color: #115e59;
+  }
+
+  .text-teal-900 {
+    color: #134e4a;
+  }
+
+  /* Cyan color palette */
+  .bg-cyan-50 {
+    background-color: #ecfeff;
+  }
+
+  .bg-cyan-100 {
+    background-color: #cffafe;
+  }
+
+  .bg-cyan-200 {
+    background-color: #a5f3fc;
+  }
+
+  .bg-cyan-300 {
+    background-color: #67e8f9;
+  }
+
+  .bg-cyan-400 {
+    background-color: #22d3ee;
+  }
+
+  .bg-cyan-500 {
+    background-color: #06b6d4;
+  }
+
+  .bg-cyan-600 {
+    background-color: #0891b2;
+  }
+
+  .bg-cyan-700 {
+    background-color: #0e7490;
+  }
+
+  .bg-cyan-800 {
+    background-color: #155e75;
+  }
+
+  .bg-cyan-900 {
+    background-color: #164e63;
+  }
+
+  .text-cyan-50 {
+    color: #ecfeff;
+  }
+
+  .text-cyan-100 {
+    color: #cffafe;
+  }
+
+  .text-cyan-200 {
+    color: #a5f3fc;
+  }
+
+  .text-cyan-300 {
+    color: #67e8f9;
+  }
+
+  .text-cyan-400 {
+    color: #22d3ee;
+  }
+
+  .text-cyan-500 {
+    color: #06b6d4;
+  }
+
+  .text-cyan-600 {
+    color: #0891b2;
+  }
+
+  .text-cyan-700 {
+    color: #0e7490;
+  }
+
+  .text-cyan-800 {
+    color: #155e75;
+  }
+
+  .text-cyan-900 {
+    color: #164e63;
+  }
+
+  /* Gray scale utilities for consistent grays */
+  .bg-gray-50 {
+    background-color: #fafafa;
+  }
+
+  .bg-gray-100 {
+    background-color: #f5f5f5;
+  }
+
+  .bg-gray-200 {
+    background-color: #e5e5e5;
+  }
+
+  .bg-gray-300 {
+    background-color: #d4d4d4;
+  }
+
+  .bg-gray-400 {
+    background-color: #a3a3a3;
+  }
+
+  .bg-gray-500 {
+    background-color: #737373;
+  }
+
+  .bg-gray-600 {
+    background-color: #525252;
+  }
+
+  .bg-gray-700 {
+    background-color: #404040;
+  }
+
+  .bg-gray-800 {
+    background-color: #262626;
+  }
+
+  .bg-gray-900 {
+    background-color: #171717;
+  }
+
+  .text-gray-50 {
+    color: #fafafa;
+  }
+
+  .text-gray-100 {
+    color: #f5f5f5;
+  }
+
+  .text-gray-200 {
+    color: #e5e5e5;
+  }
+
+  .text-gray-300 {
+    color: #d4d4d4;
+  }
+
+  .text-gray-400 {
+    color: #a3a3a3;
+  }
+
+  .text-gray-500 {
+    color: #737373;
+  }
+
+  .text-gray-600 {
+    color: #525252;
+  }
+
+  .text-gray-700 {
+    color: #404040;
+  }
+
+  .text-gray-800 {
+    color: #262626;
+  }
+
+  .text-gray-900 {
+    color: #171717;
+  }
+
+  /* Modern button variants with Teal/Cyan theme */
+  .btn-modern {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply bg-teal-600 text-white hover:bg-teal-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  .btn-modern-outline {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply border-2 border-teal-600 text-teal-600 hover:bg-teal-600 hover:text-white;
+    @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+  }
+
+  .btn-modern-ghost {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply text-teal-600 hover:bg-teal-50;
+    @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+  }
+
+  .btn-modern-secondary {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply bg-cyan-600 text-white hover:bg-cyan-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  .btn-modern-success {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply bg-green-600 text-white hover:bg-green-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  .btn-modern-warning {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply bg-amber-500 text-white hover:bg-amber-600;
+    @apply focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  .btn-modern-danger {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply bg-red-600 text-white hover:bg-red-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  /* Card variants with Teal/Cyan theme */
+  .card-modern {
+    @apply bg-white border border-teal-200 rounded-xl shadow-sm;
+    @apply hover:shadow-md transition-shadow duration-200;
+  }
+
+  .card-modern-elevated {
+    @apply bg-white border border-teal-100 rounded-xl shadow-lg;
+    @apply hover:shadow-xl transition-shadow duration-200;
+  }
+
+  .card-modern-outlined {
+    @apply bg-white border-2 border-teal-300 rounded-xl shadow-sm;
+    @apply hover:border-teal-400 transition-colors duration-200;
+  }
+
+  /* Input variants with Teal/Cyan theme */
+  .input-modern {
+    @apply w-full px-4 py-3 rounded-lg border border-teal-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500;
+    @apply transition-all duration-200 bg-white;
+  }
+
+  .input-modern-error {
+    @apply w-full px-4 py-3 rounded-lg border border-red-300;
+    @apply focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500;
+    @apply transition-all duration-200 bg-white;
+  }
+
+  .input-modern-success {
+    @apply w-full px-4 py-3 rounded-lg border border-green-300;
+    @apply focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500;
+    @apply transition-all duration-200 bg-white;
+  }
+
+  /* Status badges with Teal/Cyan theme */
+  .badge-success {
+    @apply px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-green-100 text-green-800 border border-green-200;
+  }
+
+  .badge-warning {
+    @apply px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-amber-100 text-amber-800 border border-amber-200;
+  }
+
+  .badge-error {
+    @apply px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-red-100 text-red-800 border border-red-200;
+  }
+
+  .badge-info {
+    @apply px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-cyan-100 text-cyan-800 border border-cyan-200;
+  }
+
+  .badge-primary {
+    @apply px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-teal-100 text-teal-800 border border-teal-200;
+  }
+
+  .badge-secondary {
+    @apply px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-gray-100 text-gray-800 border border-gray-200;
+  }
+
+  /* Modern modal animations */
+  .modal-enter {
+    animation: modal-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .modal-exit {
+    animation: modal-exit 0.2s cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  @keyframes modal-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translate(-50%, -50%);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translate(-50%, -50%);
+    }
+  }
+
+  @keyframes modal-exit {
+    from {
+      opacity: 1;
+      transform: scale(1) translate(-50%, -50%);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.96) translate(-50%, -50%);
+    }
+  }
+
+  /* Custom scrollbar for modal */
+  .modal-content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .modal-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .modal-content::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 3px;
+  }
+
+  .modal-content::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground));
+  }
+
+  /* Focus states for accessibility with Teal theme */
+  .focus-modern {
+    @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+  }
+
+  .focus-modern-success {
+    @apply focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+  }
+
+  .focus-modern-warning {
+    @apply focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2;
+  }
+
+  .focus-modern-error {
+    @apply focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+
+  /* Spacing utilities */
+  .space-modern > * + * {
+    margin-top: 1rem;
+  }
+
+  .space-modern-sm > * + * {
+    margin-top: 0.5rem;
+  }
+
+  .space-modern-lg > * + * {
+    margin-top: 1.5rem;
+  }
+
+  /* Gradient utilities */
+  .gradient-teal {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  }
+
+  .gradient-cyan {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  }
+
+  .gradient-teal-cyan {
+    background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+  }
+
+  .gradient-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  }
+
+  .gradient-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  }
+
+  .gradient-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  }
+
+  /* Text gradient utilities */
+  .text-gradient-teal {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-cyan {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Background pattern utilities */
+  .bg-pattern-dots {
+    background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .bg-pattern-grid {
+    background-image: linear-gradient(
+        rgba(14, 165, 233, 0.1) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Shadow utilities */
+  .shadow-teal {
+    box-shadow: 0 4px 6px -1px rgba(20, 184, 166, 0.1),
+      0 2px 4px -1px rgba(20, 184, 166, 0.06);
+  }
+
+  .shadow-cyan {
+    box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.1),
+      0 2px 4px -1px rgba(6, 182, 212, 0.06);
+  }
+
+  .shadow-teal-lg {
+    box-shadow: 0 10px 15px -3px rgba(20, 184, 166, 0.1),
+      0 4px 6px -2px rgba(20, 184, 166, 0.05);
+  }
+
+  .shadow-cyan-lg {
+    box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.1),
+      0 4px 6px -2px rgba(6, 182, 212, 0.05);
+  }
+}
