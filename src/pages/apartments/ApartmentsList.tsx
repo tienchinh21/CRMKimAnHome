@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, Eye, Pencil, Trash2, Building2 } from "lucide-react";
+import { Plus, Home, Eye, Trash2, Building2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -122,9 +122,6 @@ const ApartmentsList: React.FC = () => {
     setTypeFilter("all");
   };
 
-  const handleEditApartment = (_apartment: ReponseApartmentDto) => {
-    // TODO: Navigate to edit page or open modal
-  };
 
   const handleDeleteApartment = async (apartment: ReponseApartmentDto) => {
     if (

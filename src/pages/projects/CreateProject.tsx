@@ -298,14 +298,14 @@ const CreateProject: React.FC = () => {
         if (amenity.parentId === null) {
           // Tiện ích cha
           parents.push({
-            id: amenity.id,
+            ...(amenity.id && { id: amenity.id }),
             name: amenity.name,
           });
         } else {
           // Tiện ích con - cần tìm tên parent
           const parent = list.find((p: any) => p.id === amenity.parentId);
           children.push({
-            id: amenity.id,
+            ...(amenity.id && { id: amenity.id }),
             name: amenity.name,
             parentName: parent?.name || "",
             parentId: amenity.parentId,

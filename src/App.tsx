@@ -14,7 +14,6 @@ import ApartmentDetail from "@/pages/apartments/ApartmentDetail";
 import EditApartment from "@/pages/apartments/EditApartment";
 import BlogList from "@/pages/blog/BlogList";
 import BlogCreate from "@/pages/blog/BlogCreate";
-import BlogEditDemo from "@/components/blog/BlogEditDemo";
 import BlogCategoriesList from "@/pages/blog/BlogCategoriesList";
 import SystemConfig from "@/pages/system-config/SystemConfig";
 import NotFound from "@/pages/NotFound";
@@ -42,7 +41,6 @@ function App() {
           <Route path="apartments/:id/edit" element={<EditApartment />} />
           <Route path="blog" element={<BlogList />} />
           <Route path="blog/new" element={<BlogCreate />} />
-          <Route path="blog/edit-demo" element={<BlogEditDemo />} />
           <Route path="blog-categories" element={<BlogCategoriesList />} />
           <Route path="system-config" element={<SystemConfig />} />
         </Route>

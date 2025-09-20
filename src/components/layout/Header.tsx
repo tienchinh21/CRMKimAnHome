@@ -8,7 +8,7 @@ interface HeaderProps {
   isSidebarOpen: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuClick, isSidebarOpen }) => {
+const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between lg:justify-end">
       {/* Mobile menu button - only show on mobile when sidebar is closed */}

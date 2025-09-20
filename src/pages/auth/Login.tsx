@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { getButtonClasses, getInputClasses } from "@/lib/theme";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { getInputClasses } from "@/lib/theme";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();

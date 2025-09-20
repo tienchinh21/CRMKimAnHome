@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, XCircle, Pencil, Save, X, Trash2 } from "lucide-react";
+import { Plus, Pencil, Save, X, Trash2 } from "lucide-react";
 import {
   Select,
   SelectTrigger,
@@ -55,10 +55,8 @@ const CreateProjectAmenities: React.FC<Props> = ({
   newChild,
   onChangeParent,
   onAddParent,
-  onRemoveParent,
   onChangeChild,
   onAddChild,
-  onRemoveChild,
   creatingParentAmenity = false,
   creatingChildAmenity = false,
   onUpdateParent,
