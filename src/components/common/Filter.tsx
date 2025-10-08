@@ -11,7 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter as FilterIcon, RotateCcw, RefreshCw } from "lucide-react";
+import {
+  Search,
+  Filter as FilterIcon,
+  RotateCcw,
+  RefreshCw,
+} from "lucide-react";
 
 export interface FilterOption {
   value: string;
@@ -77,6 +82,8 @@ const Filter: React.FC<FilterProps> = ({
     );
   };
 
+  console.log(config);
+
   const getActiveFiltersCount = () => {
     let count = 0;
     if (config.search?.value && config.search.value.trim() !== "") count++;
@@ -118,7 +125,9 @@ const Filter: React.FC<FilterProps> = ({
                 disabled={loading}
                 className="text-gray-600 hover:text-gray-700 hover:bg-gray-50 border-gray-200 hover:border-gray-300"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                />
                 {loading ? "Đang tải..." : "Làm mới"}
               </Button>
             )}
@@ -173,7 +182,7 @@ const Filter: React.FC<FilterProps> = ({
           {config.status && (
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                Trạng thái
+                Nguồn khách hàng
               </Label>
               <Select
                 value={config.status.value}
@@ -197,7 +206,7 @@ const Filter: React.FC<FilterProps> = ({
           {config.type && (
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                Loại
+                Nhu cầu
               </Label>
               <Select
                 value={config.type.value}
@@ -221,7 +230,7 @@ const Filter: React.FC<FilterProps> = ({
           {config.location && (
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                Vị trí
+                Pipeline
               </Label>
               <Select
                 value={config.location.value}

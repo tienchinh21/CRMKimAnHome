@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar";
 
 const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleMenuClick = () => {
     setSidebarOpen(!sidebarOpen);
@@ -14,10 +15,19 @@ const Layout: React.FC = () => {
     setSidebarOpen(false);
   };
 
+  const handleToggleCollapse = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
   return (
     <div className="h-screen flex bg-gray-50">
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={handleSidebarClose} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={handleSidebarClose}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={handleToggleCollapse}
+      />
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-0">

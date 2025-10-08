@@ -13,6 +13,7 @@ export const ROUTES = {
   APARTMENTS: "/apartments",
   APARTMENT_DETAIL: "/apartments/:id",
   CUSTOMERS: "/customers",
+  DEALS: "/deals",
   STAFF: "/staff",
   BLOG_CATEGORIES: "/blog-categories",
   BLOG: "/blog",
@@ -130,10 +131,8 @@ export const DIRECTIONS = [
 
 // Interior Options
 export const INTERIOR_OPTIONS = [
-  { value: "basic", label: "Cơ bản" },
+  { value: "basic", label: "Chưa nội thất" },
   { value: "full", label: "Đầy đủ" },
-  { value: "luxury", label: "Cao cấp" },
-  { value: "empty", label: "Bàn giao thô" },
 ] as const;
 
 // Form Validation Messages

@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, Bell, User, Search } from "lucide-react";
-import LogoutButton from "@/components/auth/LogoutButton";
+import { Menu, Bell, Search } from "lucide-react";
+import UserDropdown from "@/components/auth/LogoutButton";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -43,13 +43,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </span>
         </Button>
 
-        {/* User menu */}
-        <Button variant="ghost" size="icon">
-          <User className="h-5 w-5" />
-        </Button>
-
-        {/* Logout button */}
-        <LogoutButton />
+        {/* User dropdown */}
+        <UserDropdown />
       </div>
     </header>
   );

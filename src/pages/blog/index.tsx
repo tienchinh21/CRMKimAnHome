@@ -44,7 +44,7 @@ const BlogList: React.FC = () => {
           page: currentPage - 1, // API uses 0-based pagination
           size: itemsPerPage,
         },
-        spec: {},
+        filter: "",
       });
 
       // Handle pagination response

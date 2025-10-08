@@ -12,7 +12,14 @@
  * formatCurrency(1500000) // "1.500.000"
  * formatCurrency(750000) // "750.000"
  */
-export const formatCurrency = (value: number | string): string => {
+export const formatCurrency = (
+  value: number | string | null | undefined
+): string => {
+  // Handle null/undefined values
+  if (value === null || value === undefined) {
+    return "0";
+  }
+
   // Convert to number if string
   const numValue = typeof value === "string" ? parseFloat(value) : value;
 
@@ -49,7 +56,14 @@ export const parseCurrency = (formattedValue: string): number => {
  * formatArea(75.5) // "75,50 m²"
  * formatArea(120) // "120,00 m²"
  */
-export const formatArea = (value: number | string): string => {
+export const formatArea = (
+  value: number | string | null | undefined
+): string => {
+  // Handle null/undefined values
+  if (value === null || value === undefined) {
+    return "0,00 m²";
+  }
+
   const numValue = typeof value === "string" ? parseFloat(value) : value;
 
   if (isNaN(numValue)) {
@@ -71,7 +85,14 @@ export const formatArea = (value: number | string): string => {
  * formatPercentage(15.5) // "15,5%"
  * formatPercentage(100) // "100%"
  */
-export const formatPercentage = (value: number | string): string => {
+export const formatPercentage = (
+  value: number | string | null | undefined
+): string => {
+  // Handle null/undefined values
+  if (value === null || value === undefined) {
+    return "0%";
+  }
+
   const numValue = typeof value === "string" ? parseFloat(value) : value;
 
   if (isNaN(numValue)) {

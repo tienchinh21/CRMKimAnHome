@@ -51,6 +51,12 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
         case "projects":
           label = "Quản lý Dự án";
           break;
+        case "customers":
+          label = "Quản lý Khách hàng";
+          break;
+        case "deals":
+          label = "Quản lý Giao dịch";
+          break;
         case "apartments":
           label = "Quản lý Căn hộ";
           break;

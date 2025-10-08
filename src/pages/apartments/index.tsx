@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ReponseApartmentDto } from "@/lib/types";
+import type { ReponseApartmentDto } from "@/types";
 import ApartmentService from "@/services/api/ApartmentService";
 import Breadcrumb from "@/components/common/breadcrumb";
 import DataTable, { type Column } from "@/components/common/DataTable";
@@ -32,11 +32,7 @@ const ApartmentsList: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  useEffect(() => {
-    loadApartments();
-  }, [currentPage, itemsPerPage]);
-
-  const loadApartments = async () => {
+  const loadApartments = useCallback(async () => {
     try {
       setLoading(true);
       const response = await ApartmentService.getWithPagination(
@@ -68,10 +64,14 @@ const ApartmentsList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    loadApartments();
+  }, [loadApartments]);
 
   // Build filter options based on loaded apartments
-  const projectOptions = React.useMemo(() => {
+  const projectOptions = useMemo(() => {
     const set = new Set<string>();
     apartments.forEach((apt) => apt.projectId && set.add(apt.projectId));
     const projectList = Array.from(set).map((p) => ({
@@ -83,22 +83,28 @@ const ApartmentsList: React.FC = () => {
     return [{ value: "all", label: "Tất cả dự án" }, ...projectList];
   }, [apartments]);
 
-  const statusOptions = [
-    { value: "all", label: "Tất cả trạng thái" },
-    { value: "0", label: "Còn trống" },
-    { value: "1", label: "Đã bán" },
-    { value: "2", label: "Đã cho thuê" },
-    { value: "3", label: "Đã đặt cọc" },
-    { value: "4", label: "Bảo trì" },
-  ];
+  const statusOptions = useMemo(
+    () => [
+      { value: "all", label: "Tất cả trạng thái" },
+      { value: "0", label: "Còn trống" },
+      { value: "1", label: "Đã bán" },
+      { value: "2", label: "Đã cho thuê" },
+      { value: "3", label: "Đã đặt cọc" },
+      { value: "4", label: "Bảo trì" },
+    ],
+    []
+  );
 
-  const typeOptions = [
-    { value: "all", label: "Tất cả loại" },
-    { value: "sell", label: "Bán" },
-    { value: "rent", label: "Cho thuê" },
-  ];
+  const typeOptions = useMemo(
+    () => [
+      { value: "all", label: "Tất cả loại" },
+      { value: "sell", label: "Bán" },
+      { value: "rent", label: "Cho thuê" },
+    ],
+    []
+  );
 
-  const filteredApartments = React.useMemo(() => {
+  const filteredApartments = useMemo(() => {
     return apartments.filter((apt) => {
       const matchSearch = `${apt.name} ${apt.alias}`
         .toLowerCase()
@@ -115,37 +121,138 @@ const ApartmentsList: React.FC = () => {
     });
   }, [apartments, search, projectFilter, statusFilter, typeFilter]);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearch("");
     setProjectFilter("all");
     setStatusFilter("all");
     setTypeFilter("all");
-  };
+  }, []);
 
-
-  const handleDeleteApartment = async (apartment: ReponseApartmentDto) => {
-    if (
-      window.confirm(`Bạn có chắc chắn muốn xóa căn hộ "${apartment.name}"?`)
-    ) {
-      try {
-        await ApartmentService.delete(apartment.id);
-        loadApartments(); // Reload the list
-      } catch (error) {
-        console.error("❌ Error deleting apartment:", error);
-        alert("Có lỗi xảy ra khi xóa căn hộ");
+  const handleDeleteApartment = useCallback(
+    async (apartment: ReponseApartmentDto) => {
+      if (
+        window.confirm(`Bạn có chắc chắn muốn xóa căn hộ "${apartment.name}"?`)
+      ) {
+        try {
+          await ApartmentService.delete(apartment.id);
+          loadApartments(); // Reload the list
+        } catch (error) {
+          console.error("❌ Error deleting apartment:", error);
+          alert("Có lỗi xảy ra khi xóa căn hộ");
+        }
       }
-    }
-  };
+    },
+    [loadApartments]
+  );
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
-  };
+  }, []);
 
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+  const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page
-  };
+  }, []);
 
+  // Define columns BEFORE any conditional returns (Rules of Hooks)
+  const columns: Column<ReponseApartmentDto>[] = useMemo(
+    () => [
+      {
+        key: "name",
+        header: "Tên căn hộ",
+        render: (apt) => (
+          <Link
+            to={`/apartments/${apt.id}`}
+            className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+          >
+            <Home className="h-4 w-4 text-blue-600" />
+            <span className="font-medium">{apt.name}</span>
+          </Link>
+        ),
+      },
+      {
+        key: "publicPrice",
+        header: "Giá công khai",
+        render: (apt) => (
+          <span className="font-semibold text-green-600">
+            {formatCurrency(apt.publicPrice)}
+          </span>
+        ),
+      },
+      {
+        key: "privatePrice",
+        header: "Giá nội bộ",
+        render: (apt) => (
+          <span className="font-semibold text-blue-600">
+            {formatCurrency(apt.privatePrice)}
+          </span>
+        ),
+      },
+      {
+        key: "area",
+        header: "Diện tích",
+        render: (apt) => `${apt.area}m²`,
+      },
+      {
+        key: "numberBedroom",
+        header: "Phòng ngủ",
+        render: (apt) => `${apt.numberBedroom} PN`,
+      },
+      {
+        key: "numberBathroom",
+        header: "Phòng tắm",
+        render: (apt) => `${apt.numberBathroom} PT`,
+      },
+      {
+        key: "status",
+        header: "Trạng thái",
+        render: (apt) => {
+          const statusMap: Record<string, { label: string; color: string }> = {
+            "0": { label: "Còn trống", color: "bg-green-100 text-green-800" },
+            "1": { label: "Đã bán", color: "bg-blue-100 text-blue-800" },
+            "2": {
+              label: "Đã cho thuê",
+              color: "bg-yellow-100 text-yellow-800",
+            },
+            "3": {
+              label: "Đã đặt cọc",
+              color: "bg-orange-100 text-orange-800",
+            },
+            "4": { label: "Bảo trì", color: "bg-red-100 text-red-800" },
+          };
+          const status = statusMap[apt.status] || {
+            label: "Không xác định",
+            color: "bg-gray-100 text-gray-800",
+          };
+          return (
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}
+            >
+              {status.label}
+            </span>
+          );
+        },
+      },
+      {
+        key: "isSell",
+        header: "Loại",
+        render: (apt) => (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              apt.isSell
+                ? "bg-purple-100 text-purple-800"
+                : "bg-indigo-100 text-indigo-800"
+            }`}
+          >
+            {apt.isSell ? "Bán" : "Cho thuê"}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
+  // Loading state UI
   if (loading) {
     return (
       <div className="space-y-6">
@@ -177,85 +284,6 @@ const ApartmentsList: React.FC = () => {
       </div>
     );
   }
-
-  const columns: Column<ReponseApartmentDto>[] = [
-    {
-      key: "name",
-      header: "Tên căn hộ",
-      render: (apt) => (
-        <Link
-          to={`/apartments/${apt.id}`}
-          className="flex items-center gap-2 hover:text-blue-600 transition-colors"
-        >
-          <Home className="h-4 w-4 text-blue-600" />
-          <span className="font-medium">{apt.name}</span>
-        </Link>
-      ),
-    },
-    {
-      key: "price",
-      header: "Giá",
-      render: (apt) => (
-        <span className="font-semibold text-green-600">
-          {formatCurrency(apt.price)}
-        </span>
-      ),
-    },
-    {
-      key: "area",
-      header: "Diện tích",
-      render: (apt) => `${apt.area}m²`,
-    },
-    {
-      key: "numberBedroom",
-      header: "Phòng ngủ",
-      render: (apt) => `${apt.numberBedroom} PN`,
-    },
-    {
-      key: "numberBathroom",
-      header: "Phòng tắm",
-      render: (apt) => `${apt.numberBathroom} PT`,
-    },
-    {
-      key: "status",
-      header: "Trạng thái",
-      render: (apt) => {
-        const statusMap: Record<string, { label: string; color: string }> = {
-          "0": { label: "Còn trống", color: "bg-green-100 text-green-800" },
-          "1": { label: "Đã bán", color: "bg-blue-100 text-blue-800" },
-          "2": { label: "Đã cho thuê", color: "bg-yellow-100 text-yellow-800" },
-          "3": { label: "Đã đặt cọc", color: "bg-orange-100 text-orange-800" },
-          "4": { label: "Bảo trì", color: "bg-red-100 text-red-800" },
-        };
-        const status = statusMap[apt.status] || {
-          label: "Không xác định",
-          color: "bg-gray-100 text-gray-800",
-        };
-        return (
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}
-          >
-            {status.label}
-          </span>
-        );
-      },
-    },
-    {
-      key: "isSell",
-      header: "Loại",
-      render: (apt) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            apt.isSell
-              ? "bg-purple-100 text-purple-800"
-              : "bg-indigo-100 text-indigo-800"
-          }`}
-        >
-          {apt.isSell ? "Bán" : "Cho thuê"}
-        </span>
-      ),
-    },
-  ];
 
   return (
     <div className="space-y-6">

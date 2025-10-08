@@ -1,21 +1,39 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Phone } from "lucide-react";
 import { getInputClasses } from "@/lib/theme";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
   const [formData, setFormData] = useState({
-    email: "",
+    phoneNumber: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Get the intended destination from location state, default to dashboard
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location.state]);
+
+  // Clear auth error when user starts typing
+  useEffect(() => {
+    if (error) {
+      clearError();
+    }
+  }, [formData.phoneNumber, formData.password]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,10 +54,10 @@ const Login: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.email) {
-      newErrors.email = "Email là bắt buộc";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email không hợp lệ";
+    if (!formData.phoneNumber) {
+      newErrors.phoneNumber = "Số điện thoại là bắt buộc";
+    } else if (!/^[0-9]{10,11}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Số điện thoại không hợp lệ";
     }
 
     if (!formData.password) {
@@ -59,25 +77,12 @@ const Login: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      // TODO: Implement actual login logic
-      console.log("Login attempt:", formData);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Store auth token (simulate)
-      localStorage.setItem("auth_token", "demo_token_123");
-
-      // Redirect to home page after successful login
-      navigate("/");
+      await login(formData.phoneNumber, formData.password);
+      // Navigation will be handled by useEffect when isAuthenticated changes
     } catch (error) {
       console.error("Login error:", error);
-      setErrors({ general: "Đăng nhập thất bại. Vui lòng thử lại." });
-    } finally {
-      setIsLoading(false);
+      // Error is handled by Redux store and displayed via error state
     }
   };
 
@@ -97,7 +102,7 @@ const Login: React.FC = () => {
                 />
                 <div className="mt-6 text-center">
                   <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                    Chào mừng đến với CRM
+                    Chào mừng đến với Kim Anh Home
                   </h3>
                   <p className="text-gray-600">
                     Hệ thống quản lý bất động sản hiện đại và chuyên nghiệp
@@ -131,38 +136,40 @@ const Login: React.FC = () => {
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">
                     {/* General Error */}
-                    {errors.general && (
+                    {error && (
                       <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                        <p className="text-sm text-red-600">{errors.general}</p>
+                        <p className="text-sm text-red-600">{error}</p>
                       </div>
                     )}
 
-                    {/* Email Field */}
+                    {/* Phone Number Field */}
                     <div className="space-y-2">
                       <Label
-                        htmlFor="email"
+                        htmlFor="phoneNumber"
                         className="text-sm font-medium text-gray-700"
                       >
-                        Email
+                        Số điện thoại
                       </Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="Nhập email của bạn"
-                          value={formData.email}
+                          id="phoneNumber"
+                          name="phoneNumber"
+                          type="tel"
+                          placeholder="Nhập số điện thoại của bạn"
+                          value={formData.phoneNumber}
                           onChange={handleInputChange}
                           className={`${getInputClasses()} pl-10 ${
-                            errors.email
+                            errors.phoneNumber
                               ? "border-red-500 focus:ring-red-500"
                               : ""
                           }`}
                         />
                       </div>
-                      {errors.email && (
-                        <p className="text-sm text-red-600">{errors.email}</p>
+                      {errors.phoneNumber && (
+                        <p className="text-sm text-red-600">
+                          {errors.phoneNumber}
+                        </p>
                       )}
                     </div>
 
@@ -250,7 +257,7 @@ const Login: React.FC = () => {
                   </form>
 
                   {/* Divider */}
-                  <div className="mt-6">
+                  {/* <div className="mt-6">
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
                         <div className="w-full border-t border-gray-300" />
@@ -261,22 +268,22 @@ const Login: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Demo Credentials */}
-                  <div className="mt-6 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg border border-teal-100">
+                  {/* <div className="mt-6 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg border border-teal-100">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">
                       Tài khoản demo:
                     </h4>
                     <div className="space-y-1 text-xs text-gray-600">
                       <p>
-                        <strong>Email:</strong> admin@kimanhome.com
+                        <strong>Số điện thoại:</strong> 0798821404
                       </p>
                       <p>
-                        <strong>Mật khẩu:</strong> admin123
+                        <strong>Mật khẩu:</strong> 123123123
                       </p>
                     </div>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
 

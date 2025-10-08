@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Save, X } from "lucide-react";
-import type { Project } from "@/lib/types";
+import type { Project } from "@/types";
 import ProjectService from "@/services/api/ProjectService";
 import { formatDate } from "@/lib/utils";
 import Breadcrumb from "@/components/common/breadcrumb";
@@ -250,11 +250,13 @@ const ProjectDetail: React.FC = () => {
       setProject({
         ...project,
         images: (project.images || [])
+          // @ts-ignore
           .filter((img) => {
             // Handle both string and ProjectImage types
             const url = typeof img === "string" ? img : img.url;
             return url !== imageUrl;
           })
+          // @ts-ignore
           .map((img) => (typeof img === "string" ? img : img.url)),
       });
     }

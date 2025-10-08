@@ -171,19 +171,17 @@ const BlogCreateModal: React.FC<BlogCreateModalProps> = ({
       </DialogTrigger>
 
       <DialogContent className="max-w-7xl w-full h-[95vh] p-0 flex flex-col">
+        {/* Header với title và description */}
+        <div className="px-6 py-4 border-b border-gray-200 bg-white">
+          <h2 className="text-2xl font-bold text-gray-900">Tạo bài viết mới</h2>
+          <p className="text-gray-600 mt-1">
+            Viết và quản lý nội dung bài viết của bạn
+          </p>
+        </div>
         <div className="flex flex-1 min-h-0">
           {/* Form Section - Left */}
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="space-y-6">
-              <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Tạo bài viết mới
-                </h2>
-                <p className="text-gray-600 mt-1">
-                  Viết và quản lý nội dung bài viết của bạn
-                </p>
-              </div>
-
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Title */}
                 <div>
@@ -203,23 +201,6 @@ const BlogCreateModal: React.FC<BlogCreateModalProps> = ({
                       {errors.title.message}
                     </p>
                   )}
-                </div>
-
-                {/* Content Editor */}
-                <div className="relative z-10">
-                  <Label
-                    htmlFor="content"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Nội dung
-                  </Label>
-                  <div className="mt-1">
-                    <QuillEditor
-                      value={content}
-                      onChange={setContent}
-                      placeholder="Viết nội dung bài viết của bạn..."
-                    />
-                  </div>
                 </div>
 
                 {/* Image and Status Row */}
@@ -280,107 +261,123 @@ const BlogCreateModal: React.FC<BlogCreateModalProps> = ({
                   </div>
 
                   {/* Status */}
-                  <div>
-                    <Label
-                      htmlFor="status"
-                      className="text-sm font-medium text-gray-700"
-                    >
-                      Trạng thái
-                    </Label>
-                    <Select
-                      value={watch("isActive") ? "active" : "inactive"}
-                      onValueChange={(value) =>
-                        setValue("isActive", value === "active")
-                      }
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Chọn trạng thái" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Công khai</SelectItem>
-                        <SelectItem value="inactive">Riêng tư</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex gap-6 flex-col">
+                    <div>
+                      <Label
+                        htmlFor="status"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Trạng thái
+                      </Label>
+                      <Select
+                        value={watch("isActive") ? "active" : "inactive"}
+                        onValueChange={(value) =>
+                          setValue("isActive", value === "active")
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Chọn trạng thái" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Công khai</SelectItem>
+                          <SelectItem value="inactive">Riêng tư</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">
+                        Danh mục bài viết
+                      </Label>
+                      <div className="mt-1">
+                        {loadingCategories ? (
+                          <div className="text-sm text-gray-500">
+                            Đang tải danh mục...
+                          </div>
+                        ) : (
+                          <Select
+                            value={watch("categories")?.[0] || ""}
+                            onValueChange={(value) => {
+                              if (value && value !== "none") {
+                                setValue("categories", [value]);
+                              } else {
+                                setValue("categories", []);
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn danh mục bài viết" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">
+                                Không chọn danh mục
+                              </SelectItem>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.id}
+                                  value={category.id}
+                                >
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">
+                        Loại bài viết
+                      </Label>
+                      <div className="mt-1 space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="isNews"
+                            checked={watch("isNews")}
+                            onCheckedChange={(checked) =>
+                              setValue("isNews", !!checked)
+                            }
+                          />
+                          <Label
+                            htmlFor="isNews"
+                            className="text-sm text-gray-700"
+                          >
+                            Bài viết
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="isLegal"
+                            checked={watch("isLegal")}
+                            onCheckedChange={(checked) =>
+                              setValue("isLegal", !!checked)
+                            }
+                          />
+                          <Label
+                            htmlFor="isLegal"
+                            className="text-sm text-gray-700"
+                          >
+                            Pháp lý
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Blog Type Selection */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">
-                      Loại bài viết
-                    </Label>
-                    <div className="mt-1 space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="isNews"
-                          checked={watch("isNews")}
-                          onCheckedChange={(checked) =>
-                            setValue("isNews", !!checked)
-                          }
-                        />
-                        <Label
-                          htmlFor="isNews"
-                          className="text-sm text-gray-700"
-                        >
-                          Bài viết
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="isLegal"
-                          checked={watch("isLegal")}
-                          onCheckedChange={(checked) =>
-                            setValue("isLegal", !!checked)
-                          }
-                        />
-                        <Label
-                          htmlFor="isLegal"
-                          className="text-sm text-gray-700"
-                        >
-                          Pháp lý
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Categories Selection */}
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">
-                      Danh mục bài viết
-                    </Label>
-                    <div className="mt-1">
-                      {loadingCategories ? (
-                        <div className="text-sm text-gray-500">
-                          Đang tải danh mục...
-                        </div>
-                      ) : (
-                        <Select
-                          value={watch("categories")?.[0] || ""}
-                          onValueChange={(value) => {
-                            if (value && value !== "none") {
-                              setValue("categories", [value]);
-                            } else {
-                              setValue("categories", []);
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Chọn danh mục bài viết" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">
-                              Không chọn danh mục
-                            </SelectItem>
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
+                {/* Content Editor */}
+                <div className="relative z-10">
+                  <Label
+                    htmlFor="content"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Nội dung
+                  </Label>
+                  <div className="mt-1">
+                    <QuillEditor
+                      value={content}
+                      onChange={setContent}
+                      placeholder="Viết nội dung bài viết của bạn..."
+                    />
                   </div>
                 </div>
               </form>
@@ -388,136 +385,95 @@ const BlogCreateModal: React.FC<BlogCreateModalProps> = ({
           </div>
 
           {/* Preview Section - Right */}
-          <div className="w-80 bg-gradient-to-br from-gray-50 to-gray-100 border-l border-gray-200 overflow-y-auto min-h-0">
-            <div className="sticky top-0 bg-gradient-to-br from-gray-50 to-gray-100 p-6 pb-4 border-b border-gray-200 z-10">
+          <div className="w-96 bg-white border-l border-gray-200 overflow-y-auto min-h-0">
+            <div className="sticky top-0 bg-white p-4 border-b border-gray-200 z-10">
               <h3 className="text-lg font-semibold text-gray-900">Xem trước</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Bài viết sẽ hiển thị như thế này
+              </p>
             </div>
 
-            <div className="space-y-4 p-6 pt-4">
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Ngày đăng:</span>
-                <span className="font-medium">
-                  {new Date().toLocaleDateString("vi-VN")}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Trạng thái:</span>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    watch("isActive")
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {watch("isActive") ? "Công khai" : "Riêng tư"}
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <div className="text-xs font-medium text-gray-500 mb-2">
-                    Tiêu đề
+            <div className="p-4">
+              {/* Article Preview */}
+              <article className="max-w-none">
+                {/* Article Header */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                    <span>{new Date().toLocaleDateString("vi-VN")}</span>
+                    <span>•</span>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        watch("isActive")
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {watch("isActive") ? "Công khai" : "Riêng tư"}
+                    </span>
                   </div>
-                  <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <div className="text-sm font-semibold text-gray-900">
-                      {watch("title") || "Tiêu đề bài viết"}
-                    </div>
+
+                  <h1 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
+                    {watch("title") || "Tiêu đề bài viết"}
+                  </h1>
+
+                  {/* Article Meta */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {watch("isNews") && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                        Bài viết
+                      </span>
+                    )}
+                    {watch("isLegal") && (
+                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                        Pháp lý
+                      </span>
+                    )}
+                    {watch("categories") &&
+                      (watch("categories")?.length || 0) > 0 &&
+                      (() => {
+                        const selectedCategoryId = watch("categories")?.[0];
+                        const category = categories.find(
+                          (c) => c.id === selectedCategoryId
+                        );
+                        return category ? (
+                          <span className="px-2 py-1 bg-teal-100 text-teal-700 text-xs rounded-full font-medium">
+                            {category.name}
+                          </span>
+                        ) : null;
+                      })()}
                   </div>
                 </div>
 
-                <div>
-                  <div className="text-xs font-medium text-gray-500 mb-2">
-                    Ảnh đại diện
-                  </div>
-                  {imagePreview ? (
-                    <div className="aspect-video w-full rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                {/* Featured Image */}
+                {imagePreview && (
+                  <div className="mb-6">
+                    <div className="aspect-video w-full rounded-lg overflow-hidden shadow-sm">
                       <img
                         src={imagePreview}
-                        alt="Preview"
+                        alt="Featured image"
                         className="w-full h-full object-cover"
                       />
                     </div>
+                  </div>
+                )}
+
+                {/* Article Content */}
+                <div className="prose prose-gray max-w-none">
+                  {content ? (
+                    <div
+                      dangerouslySetInnerHTML={{ __html: content }}
+                      className="prose-headings:text-gray-900 prose-headings:font-semibold prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-teal-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-code:text-gray-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-blockquote:border-l-4 prose-blockquote:border-teal-500 prose-blockquote:bg-teal-50 prose-blockquote:pl-4 prose-blockquote:py-2 prose-ul:list-disc prose-ol:list-decimal prose-li:marker:text-gray-400"
+                    />
                   ) : (
-                    <div className="aspect-video w-full bg-white rounded-lg border border-gray-200 shadow-sm flex items-center justify-center">
-                      <div className="text-center text-gray-400">
-                        <ImageIcon className="h-6 w-6 mx-auto mb-1" />
-                        <p className="text-xs">Chưa có ảnh</p>
-                      </div>
+                    <div className="text-center py-12 text-gray-400">
+                      <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">
+                        Nội dung bài viết sẽ hiển thị ở đây...
+                      </p>
                     </div>
                   )}
                 </div>
-
-                <div>
-                  <div className="text-xs font-medium text-gray-500 mb-2">
-                    Loại bài viết
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <div className="flex flex-wrap gap-1">
-                      {watch("isNews") && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                          Bài viết
-                        </span>
-                      )}
-                      {watch("isLegal") && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                          Pháp lý
-                        </span>
-                      )}
-                      {!watch("isNews") && !watch("isLegal") && (
-                        <div className="text-gray-400 italic text-xs">
-                          Chưa chọn loại bài viết
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-xs font-medium text-gray-500 mb-2">
-                    Danh mục
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    {watch("categories") &&
-                    (watch("categories")?.length || 0) > 0 ? (
-                      <div>
-                        {(() => {
-                          const selectedCategoryId = watch("categories")?.[0];
-                          const category = categories.find(
-                            (c) => c.id === selectedCategoryId
-                          );
-                          return category ? (
-                            <span className="px-2 py-1 bg-teal-100 text-teal-700 text-xs rounded-full">
-                              {category.name}
-                            </span>
-                          ) : null;
-                        })()}
-                      </div>
-                    ) : (
-                      <div className="text-gray-400 italic text-xs">
-                        Chưa chọn danh mục
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-xs font-medium text-gray-500 mb-2">
-                    Nội dung
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm min-h-32 max-h-64 overflow-y-auto">
-                    <div className="prose prose-xs max-w-none">
-                      {content ? (
-                        <div dangerouslySetInnerHTML={{ __html: content }} />
-                      ) : (
-                        <div className="text-gray-400 italic text-xs">
-                          Nội dung bài viết sẽ hiển thị ở đây...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </article>
             </div>
           </div>
         </div>

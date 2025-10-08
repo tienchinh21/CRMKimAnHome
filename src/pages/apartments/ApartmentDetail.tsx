@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -16,19 +16,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Breadcrumb from "@/components/common/breadcrumb";
 import ImageEditor from "@/components/common/ImageEditor";
+import QuillEditor from "@/components/forms/QuillEditor";
+import SelectWithSearch from "@/components/common/SelectWithSearch";
 import ApartmentService from "@/services/api/ApartmentService";
 import ProjectService from "@/services/api/ProjectService";
 import type {
   ReponseDetailApartmentDto,
   Project,
   UpdateApartmentDto,
-} from "@/lib/types";
+  Legal,
+} from "@/types";
 import {
   APARTMENT_STATUS,
   DIRECTIONS,
   INTERIOR_OPTIONS,
 } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/utils/format";
 
 const ApartmentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +40,11 @@ const ApartmentDetail: React.FC = () => {
   const [apartment, setApartment] = useState<ReponseDetailApartmentDto | null>(
     null
   );
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<[id: string, name: string] | null>(
+    null
+  );
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [legals, setLegals] = useState<Legal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -44,6 +52,7 @@ const ApartmentDetail: React.FC = () => {
   // Edit mode states
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [newLegal, setNewLegal] = useState("");
 
   // Image management states
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -52,9 +61,9 @@ const ApartmentDetail: React.FC = () => {
   // Edit form states
   const [editData, setEditData] = useState<UpdateApartmentDto>({
     name: "",
-    price: "",
+    publicPrice: "",
+    privatePrice: "",
     detailedDescription: "",
-    highlights: "",
     area: "",
     numberBedroom: "0",
     numberBathroom: "0",
@@ -65,36 +74,35 @@ const ApartmentDetail: React.FC = () => {
     projectId: "",
     isSell: true,
     alias: "",
+    ownerName: "",
+    ownerPhone: "",
+    isPublic: false,
   });
 
-  useEffect(() => {
-    if (id) {
-      loadApartmentDetail();
+  const loadProjects = useCallback(async () => {
+    try {
+      const response = await ProjectService.getAllProjects();
+      setProjects(response.data || []);
+    } catch (error) {
+      console.error("Error loading projects:", error);
     }
-  }, [id]);
+  }, []);
 
-  // Reset selected image when apartment changes
-  useEffect(() => {
-    setSelectedImageIndex(0);
-  }, [apartment?.id]);
+  const loadLegals = useCallback(async (apartmentId: string) => {
+    try {
+      const response = await ApartmentService.getLegals(apartmentId);
+      setLegals(response.data || []);
+    } catch (error) {
+      console.error("Error loading legals:", error);
+    }
+  }, []);
 
-  // Cleanup localStorage when component unmounts
-  useEffect(() => {
-    return () => {
-      // Clear saved images from localStorage when leaving the page
-      if (apartment?.images && apartment.images.length > 0) {
-        for (const imageUrl of apartment.images) {
-          const imageKey = `apartment_image_${id}_${imageUrl.split("/").pop()}`;
-          localStorage.removeItem(imageKey);
-        }
-      }
-    };
-  }, [apartment?.images, id]);
+  const loadApartmentDetail = useCallback(async () => {
+    if (!id) return;
 
-  const loadApartmentDetail = async () => {
     try {
       setLoading(true);
-      const response = await ApartmentService.getById(id!);
+      const response = await ApartmentService.getById(id);
 
       if (response.content) {
         setApartment(response.content);
@@ -102,9 +110,11 @@ const ApartmentDetail: React.FC = () => {
         // Initialize edit data
         setEditData({
           name: response.content.name || "",
-          price: response.content.price || "",
+          publicPrice: response.content.publicPrice || "",
+          privatePrice: response.content.privatePrice || "",
           detailedDescription: response.content.detailedDescription || "",
-          highlights: response.content.highlights || "",
+          ownerName: response.content.ownerName || "",
+          ownerPhone: response.content.ownerPhone || "",
           area: response.content.area || "",
           numberBedroom: response.content.numberBedroom?.toString() || "0",
           numberBathroom: response.content.numberBathroom?.toString() || "0",
@@ -112,50 +122,19 @@ const ApartmentDetail: React.FC = () => {
           direction: response.content.direction || "",
           interior: response.content.interior || "",
           status: response.content.status?.toString() || "0",
-          projectId: response.content.projectId || "",
+          projectId: response.content.project.id || "",
           isSell: response.content.isSell || true,
           alias: response.content.alias || "",
+          isPublic: response.content.isPublic || false,
         });
 
-        // Save images to localStorage for later use in updates
-        if (response.content.images && response.content.images.length > 0) {
-          for (const imageUrl of response.content.images) {
-            const imageKey = `apartment_image_${id}_${imageUrl
-              .split("/")
-              .pop()}`;
-            if (!localStorage.getItem(imageKey)) {
-              try {
-                const response = await fetch(imageUrl);
-                const blob = await response.blob();
-                const reader = new FileReader();
-                reader.onload = () => {
-                  const base64 = (reader.result as string).split(",")[1];
-                  localStorage.setItem(imageKey, base64);
-                };
-                reader.readAsDataURL(blob);
-              } catch (error) {
-                console.error(
-                  "Error saving image to localStorage:",
-                  imageUrl,
-                  error
-                );
-              }
-            }
-          }
-        }
+        setProject([
+          response.content.project.id,
+          response.content.project.name,
+        ]);
 
-        // Load project details (optional, don't fail if this fails)
-        if (response.content.projectId) {
-          try {
-            const projectResponse = await ProjectService.getProjectById(
-              response.content.projectId
-            );
-            setProject(projectResponse.content!);
-          } catch (projectError) {
-            console.warn("⚠️ Could not load project details:", projectError);
-            // Don't set error, just continue without project data
-          }
-        }
+        // Load legal information
+        await loadLegals(id);
       } else {
         setError("Không thể tải thông tin căn hộ");
       }
@@ -165,9 +144,19 @@ const ApartmentDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, loadLegals]);
 
-  const getStatusInfo = (status: string | number) => {
+  useEffect(() => {
+    loadApartmentDetail();
+    loadProjects();
+  }, [loadApartmentDetail, loadProjects]);
+
+  // Reset selected image when apartment changes
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [apartment?.id]);
+
+  const getStatusInfo = useCallback((status: string | number) => {
     const statusOption = APARTMENT_STATUS.find(
       (s) => s.value === status.toString()
     );
@@ -203,31 +192,23 @@ const ApartmentDetail: React.FC = () => {
       label,
       color: colorClass,
     };
-  };
+  }, []);
 
-  const getDirectionInfo = (direction: string) => {
+  const getDirectionInfo = useCallback((direction: string) => {
     return DIRECTIONS.find((d) => d.value === direction)?.label || direction;
-  };
+  }, []);
 
-  const getInteriorInfo = (interior: string) => {
+  const getInteriorInfo = useCallback((interior: string) => {
     return (
       INTERIOR_OPTIONS.find((i) => i.value === interior)?.label || interior
     );
-  };
+  }, []);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     setIsEditing(true);
-  };
+  }, []);
 
-  const handleCancel = () => {
-    // Clear saved images from localStorage when canceling edit
-    if (apartment?.images && apartment.images.length > 0) {
-      for (const imageUrl of apartment.images) {
-        const imageKey = `apartment_image_${id}_${imageUrl.split("/").pop()}`;
-        localStorage.removeItem(imageKey);
-      }
-    }
-
+  const handleCancel = useCallback(() => {
     setIsEditing(false);
     setSelectedImages([]);
     setDeletedImages([]);
@@ -236,9 +217,11 @@ const ApartmentDetail: React.FC = () => {
     if (apartment) {
       setEditData({
         name: apartment.name || "",
-        price: apartment.price || "",
+        publicPrice: apartment.publicPrice || "",
+        privatePrice: apartment.privatePrice || "",
         detailedDescription: apartment.detailedDescription || "",
-        highlights: apartment.highlights || "",
+        ownerName: apartment.ownerName || "",
+        ownerPhone: apartment.ownerPhone || "",
         area: apartment.area || "",
         numberBedroom: apartment.numberBedroom?.toString() || "0",
         numberBathroom: apartment.numberBathroom?.toString() || "0",
@@ -249,11 +232,12 @@ const ApartmentDetail: React.FC = () => {
         projectId: apartment.projectId || "",
         isSell: apartment.isSell || true,
         alias: apartment.alias || "",
+        isPublic: apartment.isPublic || false,
       });
     }
-  };
+  }, [apartment]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!id || !apartment) return;
 
     try {
@@ -267,44 +251,15 @@ const ApartmentDetail: React.FC = () => {
         for (const imageUrl of apartment.images) {
           // Skip if this image is marked for deletion
           if (!deletedImages.includes(imageUrl)) {
-            // Try to get the image from localStorage first
-            const savedImageKey = `apartment_image_${id}_${imageUrl
-              .split("/")
-              .pop()}`;
-            const savedImageData = localStorage.getItem(savedImageKey);
-
-            if (savedImageData) {
-              try {
-                // Convert base64 back to File
-                const byteCharacters = atob(savedImageData);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                  byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const fileName = imageUrl.split("/").pop() || "image.jpg";
-                const file = new File([byteArray], fileName, {
-                  type: "image/jpeg",
-                });
-                imagesToKeep.push(file);
-              } catch (error) {
-                console.error("Error converting saved image to File:", error);
-              }
-            } else {
-              // If not in localStorage, try to fetch from URL
-              try {
-                const response = await fetch(imageUrl);
-                const blob = await response.blob();
-                const fileName = imageUrl.split("/").pop() || "image.jpg";
-                const file = new File([blob], fileName, { type: blob.type });
-                imagesToKeep.push(file);
-              } catch (error) {
-                console.error(
-                  "Error fetching image from URL:",
-                  imageUrl,
-                  error
-                );
-              }
+            // Fetch from URL directly (removed localStorage logic)
+            try {
+              const response = await fetch(imageUrl);
+              const blob = await response.blob();
+              const fileName = imageUrl.split("/").pop() || "image.jpg";
+              const file = new File([blob], fileName, { type: blob.type });
+              imagesToKeep.push(file);
+            } catch (error) {
+              console.error("Error fetching image from URL:", imageUrl, error);
             }
           }
         }
@@ -318,14 +273,6 @@ const ApartmentDetail: React.FC = () => {
       // Reset image states
       setSelectedImages([]);
       setDeletedImages([]);
-
-      // Clear saved images from localStorage after successful update
-      if (apartment.images && apartment.images.length > 0) {
-        for (const imageUrl of apartment.images) {
-          const imageKey = `apartment_image_${id}_${imageUrl.split("/").pop()}`;
-          localStorage.removeItem(imageKey);
-        }
-      }
 
       // Reload apartment data
       await loadApartmentDetail();
@@ -344,31 +291,70 @@ const ApartmentDetail: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [
+    id,
+    apartment,
+    selectedImages,
+    deletedImages,
+    editData,
+    loadApartmentDetail,
+  ]);
 
-  const handleInputChange = (field: keyof UpdateApartmentDto, value: any) => {
-    setEditData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const handleInputChange = useCallback(
+    (field: keyof UpdateApartmentDto, value: any) => {
+      setEditData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    },
+    []
+  );
 
   // Image management functions
-  const handleImageSelect = (files: File[]) => {
+  const handleImageSelect = useCallback((files: File[]) => {
     setSelectedImages((prev) => [...prev, ...files]);
-  };
+  }, []);
 
-  const handleImageRemove = (index: number) => {
+  const handleImageRemove = useCallback((index: number) => {
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const handleImageDelete = (imageUrl: string) => {
+  const handleImageDelete = useCallback((imageUrl: string) => {
     setDeletedImages((prev) => [...prev, imageUrl]);
-  };
+  }, []);
 
-  const handleImageRestore = (imageUrl: string) => {
+  const handleImageRestore = useCallback((imageUrl: string) => {
     setDeletedImages((prev) => prev.filter((url) => url !== imageUrl));
-  };
+  }, []);
+
+  const addLegal = useCallback(async () => {
+    if (newLegal.trim() && apartment?.id) {
+      try {
+        await ApartmentService.createLegal(apartment.id, {
+          name: newLegal.trim(),
+          sortOrder: legals.length,
+        });
+        setNewLegal("");
+        await loadLegals(apartment.id);
+      } catch (error) {
+        console.error("Error adding legal:", error);
+      }
+    }
+  }, [newLegal, apartment?.id, legals.length, loadLegals]);
+
+  const removeLegal = useCallback(
+    async (legalId: string) => {
+      try {
+        await ApartmentService.deleteLegal(legalId);
+        if (apartment?.id) {
+          await loadLegals(apartment.id);
+        }
+      } catch (error) {
+        console.error("Error removing legal:", error);
+      }
+    },
+    [apartment?.id, loadLegals]
+  );
 
   if (loading) {
     return (
@@ -449,13 +435,16 @@ const ApartmentDetail: React.FC = () => {
             </div>
 
             {!isEditing ? (
-              <Button
-                onClick={handleEdit}
-                className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                <Edit className="h-4 w-4" />
-                Chỉnh sửa
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handleEdit}
+                  variant="outline"
+                  className="flex items-center gap-2 border-teal-600 text-teal-600 hover:bg-teal-50 px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  <Edit className="h-4 w-4" />
+                  Chỉnh sửa
+                </Button>
+              </div>
             ) : (
               <div className="flex items-center gap-3">
                 <Button
@@ -623,16 +612,47 @@ const ApartmentDetail: React.FC = () => {
 
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-700">
-                        Giá
+                        Giá công khai
                       </label>
                       <input
                         type="text"
-                        value={editData.price}
-                        onChange={(e) =>
-                          handleInputChange("price", e.target.value)
+                        value={
+                          editData.publicPrice
+                            ? formatCurrency(editData.publicPrice)
+                            : ""
                         }
+                        onChange={(e) => {
+                          const cleanValue = e.target.value.replace(
+                            /[^\d]/g,
+                            ""
+                          );
+                          handleInputChange("publicPrice", cleanValue);
+                        }}
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                        placeholder="Nhập giá..."
+                        placeholder="Nhập giá công khai..."
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">
+                        Giá nội bộ
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          editData.privatePrice
+                            ? formatCurrency(editData.privatePrice)
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const cleanValue = e.target.value.replace(
+                            /[^\d]/g,
+                            ""
+                          );
+                          handleInputChange("privatePrice", cleanValue);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                        placeholder="Nhập giá nội bộ..."
                       />
                     </div>
 
@@ -773,25 +793,156 @@ const ApartmentDetail: React.FC = () => {
                   </div>
 
                   <div className="space-y-4">
+                    {/* Project Selection */}
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">
+                        Dự án <span className="text-red-500">*</span>
+                      </label>
+                      <SelectWithSearch
+                        options={projects.map((project) => ({
+                          value: project.id.toString(),
+                          label: project.name,
+                        }))}
+                        value={editData.projectId}
+                        onChange={(value) =>
+                          handleInputChange("projectId", value)
+                        }
+                        placeholder={
+                          projects.length > 0
+                            ? "Chọn dự án"
+                            : "Đang tải dự án..."
+                        }
+                        searchPlaceholder="Tìm dự án..."
+                        maxHeight={250}
+                      />
+                    </div>
+
+                    {/* Owner Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Tên chủ căn hộ <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={editData.ownerName}
+                          onChange={(e) =>
+                            handleInputChange("ownerName", e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          placeholder="Nhập tên chủ căn hộ..."
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Số điện thoại <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          value={editData.ownerPhone}
+                          onChange={(e) =>
+                            handleInputChange("ownerPhone", e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          placeholder="Nhập số điện thoại..."
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-700">
                         Mô tả chi tiết
                       </label>
-                      <textarea
-                        value={editData.detailedDescription}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "detailedDescription",
-                            e.target.value
-                          )
+                      <QuillEditor
+                        key={`inline-editor-${apartment.id}`}
+                        value={editData.detailedDescription || ""}
+                        onChange={(content) =>
+                          handleInputChange("detailedDescription", content)
                         }
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         placeholder="Nhập mô tả chi tiết..."
+                        disableImageUpload={true}
+                        showWordCount={true}
+                        className="min-h-[300px]"
                       />
                     </div>
 
-                    <div className="space-y-1">
+                    {/* Legal Information - Chỉ hiển thị trong edit mode */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-medium text-gray-700">
+                        Thông tin pháp lý
+                      </h3>
+
+                      {/* Hiển thị danh sách pháp lý hiện có */}
+                      {legals.length > 0 && (
+                        <div className="space-y-2">
+                          {legals.map((legal, index) => (
+                            <div
+                              key={legal.id}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                            >
+                              <span className="text-sm text-gray-700">
+                                {index + 1}. {legal.name}
+                              </span>
+                              <button
+                                onClick={() => removeLegal(legal.id)}
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Form thêm pháp lý mới */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Thêm thông tin pháp lý
+                        </label>
+                        <div className="flex space-x-2">
+                          <input
+                            type="text"
+                            placeholder="Nhập thông tin pháp lý..."
+                            value={newLegal}
+                            onChange={(e) => setNewLegal(e.target.value)}
+                            onKeyPress={(e) => e.key === "Enter" && addLegal()}
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                          <button
+                            onClick={addLegal}
+                            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-700">
                         Điểm nổi bật (mỗi dòng một điểm)
                       </label>
@@ -804,7 +955,7 @@ const ApartmentDetail: React.FC = () => {
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         placeholder="Nhập các điểm nổi bật, mỗi dòng một điểm..."
                       />
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ) : (
@@ -814,15 +965,12 @@ const ApartmentDetail: React.FC = () => {
                       {apartment.name}
                     </h1>
                     <p className="text-gray-500 text-sm mb-4">
-                      <span className="font-medium">Alias: </span>
+                      <span className="font-medium">Mã căn hộ: </span>
                       {apartment.alias || "Chưa cập nhật"}
                     </p>
 
                     <div className="flex items-center justify-between mb-4">
-                      <div className="text-3xl font-bold text-green-600">
-                        {apartment.price}
-                      </div>
-                      <Badge variant="secondary" className="px-3 py-1">
+                      <Badge variant="default" className="px-3 py-1">
                         {apartment.isSell ? "Bán" : "Cho thuê"}
                       </Badge>
                     </div>
@@ -830,6 +978,58 @@ const ApartmentDetail: React.FC = () => {
 
                   {/* Property Details Grid */}
                   <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-green-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">
+                          Giá công khai
+                        </span>
+                        <p className="font-semibold text-green-600">
+                          {formatCurrency(apartment.publicPrice)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">
+                          Giá nội bộ
+                        </span>
+                        <p className="font-semibold text-blue-600">
+                          {formatCurrency(apartment.privatePrice)}
+                        </p>
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
                       <Home className="w-5 h-5 text-gray-500" />
                       <div>
@@ -891,6 +1091,27 @@ const ApartmentDetail: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Legal Information - Chỉ hiển thị trong view mode */}
+                  {legals.length > 0 && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">
+                        Thông tin pháp lý
+                      </h3>
+                      <div className="space-y-2">
+                        {legals.map((legal, index) => (
+                          <div
+                            key={legal.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                          >
+                            <span className="text-sm text-gray-700">
+                              {index + 1}. {legal.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="pt-4 border-t border-gray-200">
                     <div className="text-sm text-gray-500">
                       <p>
@@ -929,7 +1150,7 @@ const ApartmentDetail: React.FC = () => {
                   <div>
                     <span className="text-sm text-gray-600">Tên dự án</span>
                     <p className="font-semibold text-lg text-teal-900">
-                      {project.name}
+                      {project[1]}
                     </p>
                   </div>
                 </div>
@@ -945,37 +1166,14 @@ const ApartmentDetail: React.FC = () => {
               </h2>
             </div>
             <div className="p-6">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {apartment.detailedDescription}
-              </p>
+              <div
+                className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: apartment.detailedDescription,
+                }}
+              />
             </div>
           </div>
-
-          {/* Highlights */}
-          {apartment.highlights && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Điểm nổi bật
-                </h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-2">
-                  {apartment.highlights
-                    .split("\n")
-                    .filter((highlight) => highlight.trim())
-                    .map((highlight, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          {highlight.trim()}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

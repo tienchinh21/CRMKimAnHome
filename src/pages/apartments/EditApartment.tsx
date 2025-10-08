@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import QuillEditor from "@/components/forms/QuillEditor";
 import {
   ArrowLeft,
   Save,
@@ -23,8 +23,9 @@ import {
   Upload,
   Image as ImageIcon,
 } from "lucide-react";
-import type { Apartment } from "@/lib/types";
+import type { Apartment, Project } from "@/types";
 import ApartmentService from "@/services/api/ApartmentService";
+import ProjectService from "@/services/api/ProjectService";
 import {
   VALIDATION_MESSAGES,
   APARTMENT_STATUS,
@@ -32,6 +33,7 @@ import {
   INTERIOR_OPTIONS,
 } from "@/lib/constants";
 import ImageWithFallback from "@/components/common/ImageWithFallback";
+import SelectWithSearch from "@/components/common/SelectWithSearch";
 
 // Validation schema
 const editApartmentSchema = z.object({
@@ -54,6 +56,18 @@ const editApartmentSchema = z.object({
   status: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
   isSell: z.boolean(),
   alias: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
+  projectId: z.string().min(1, VALIDATION_MESSAGES.REQUIRED),
+  ownerName: z
+    .string()
+    .min(1, VALIDATION_MESSAGES.REQUIRED)
+    .min(2, VALIDATION_MESSAGES.MIN_LENGTH(2))
+    .max(100, VALIDATION_MESSAGES.MAX_LENGTH(100)),
+  ownerPhone: z
+    .string()
+    .min(1, VALIDATION_MESSAGES.REQUIRED)
+    .regex(/^[0-9+\-\s()]+$/, "Số điện thoại không hợp lệ")
+    .min(10, "Số điện thoại phải có ít nhất 10 số")
+    .max(15, "Số điện thoại không được quá 15 ký tự"),
 });
 
 type EditApartmentForm = z.infer<typeof editApartmentSchema>;
@@ -65,6 +79,7 @@ const EditApartment: React.FC = () => {
   const [apartment, setApartment] = useState<Apartment | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   // Dynamic fields
   const [highlights, setHighlights] = useState<string[]>([]);
@@ -88,7 +103,19 @@ const EditApartment: React.FC = () => {
     if (id) {
       loadApartment(id);
     }
+    loadProjects();
   }, [id]);
+
+  const loadProjects = async () => {
+    try {
+      console.log("🔄 Loading projects...");
+      const response = await ProjectService.getAllProjects();
+      console.log("✅ Projects loaded:", response);
+      setProjects(response.data || []);
+    } catch (error) {
+      console.error("❌ Error loading projects:", error);
+    }
+  };
 
   const loadApartment = async (apartmentId: string) => {
     try {
@@ -97,6 +124,7 @@ const EditApartment: React.FC = () => {
 
       if (response.content) {
         const apt = response.content as any;
+        console.log("🏠 Apartment data:", apt);
         setApartment(apt);
 
         // Set form values
@@ -112,6 +140,16 @@ const EditApartment: React.FC = () => {
         setValue("status", apt.status);
         setValue("isSell", apt.isSell);
         setValue("alias", apt.alias);
+        setValue("projectId", apt.projectId);
+        setValue("ownerName", apt.ownerName || "");
+        setValue("ownerPhone", apt.ownerPhone || "");
+
+        console.log("📝 Form values set:", {
+          detailedDescription: apt.detailedDescription,
+          projectId: apt.projectId,
+          ownerName: apt.ownerName,
+          ownerPhone: apt.ownerPhone,
+        });
 
         // Set dynamic fields
         setHighlights(apt.highlights || []);
@@ -156,6 +194,9 @@ const EditApartment: React.FC = () => {
         data: {
           ...data,
           highlights: highlights.join("\n"),
+          ownerName: data.ownerName,
+          ownerPhone: data.ownerPhone,
+          projectId: data.projectId,
         },
         file: apartment?.files || [],
       };
@@ -255,86 +296,351 @@ const EditApartment: React.FC = () => {
       </div>
 
       {/* Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Images and Details */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Image Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Hình ảnh căn hộ</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Main Image */}
-                <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                  {apartment.files && apartment.files.length > 0 ? (
-                    <ImageWithFallback
-                      src={apartment.files[0]}
-                      alt={apartment.name}
-                      className="h-full w-full"
-                      fallbackType="apartment"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500">Chưa có hình ảnh</p>
+      <div className="space-y-8">
+        {/* Top Row - Images and Basic Info */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Images */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hình ảnh căn hộ</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Main Image */}
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+                    {apartment.files && apartment.files.length > 0 ? (
+                      <ImageWithFallback
+                        src={apartment.files[0]}
+                        alt={apartment.name}
+                        className="h-full w-full"
+                        fallbackType="apartment"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-500">Chưa có hình ảnh</p>
+                        </div>
                       </div>
+                    )}
+                  </div>
+
+                  {/* Add Image Button */}
+                  <Button variant="outline" className="w-full">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Thêm ảnh
+                  </Button>
+
+                  {/* Thumbnail Gallery */}
+                  {apartment.files && apartment.files.length > 1 && (
+                    <div className="flex space-x-2 overflow-x-auto pb-2">
+                      {apartment.files.slice(1).map((file, index) => (
+                        <div
+                          key={index}
+                          className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 group"
+                        >
+                          <ImageWithFallback
+                            src={file}
+                            alt={`${apartment.name} - Hình ${index + 2}`}
+                            className="h-full w-full"
+                            fallbackType="apartment"
+                          />
+                          <button className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                {/* Add Image Button */}
-                <Button variant="outline" className="w-full">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Thêm ảnh
-                </Button>
+          {/* Right Column - Basic Information */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Thông tin căn hộ</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Apartment Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">
+                    Tên căn hộ <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    {...register("name")}
+                    className={errors.name ? "border-red-500" : ""}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-500">
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
 
-                {/* Thumbnail Gallery */}
-                {apartment.files && apartment.files.length > 1 && (
-                  <div className="flex space-x-2 overflow-x-auto pb-2">
-                    {apartment.files.slice(1).map((file, index) => (
-                      <div
-                        key={index}
-                        className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 group"
-                      >
-                        <ImageWithFallback
-                          src={file}
-                          alt={`${apartment.name} - Hình ${index + 2}`}
-                          className="h-full w-full"
-                          fallbackType="apartment"
-                        />
-                        <button className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
+                {/* Alias */}
+                <div className="space-y-2">
+                  <Label htmlFor="alias">Alias</Label>
+                  <Input id="alias" {...register("alias")} />
+                </div>
+
+                {/* Price */}
+                <div className="space-y-2">
+                  <Label htmlFor="price">
+                    Giá <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="price"
+                    {...register("price")}
+                    placeholder="Nhập giá..."
+                    className={errors.price ? "border-red-500" : ""}
+                  />
+                  {errors.price && (
+                    <p className="text-sm text-red-500">
+                      {errors.price.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Type (Sell/Rent) */}
+                <div className="space-y-2">
+                  <Label>Loại</Label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        checked={isSell}
+                        onChange={() => setValue("isSell", true)}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm">Bán</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        checked={!isSell}
+                        onChange={() => setValue("isSell", false)}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm">Cho thuê</span>
+                    </label>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
 
-          {/* Detailed Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Mô tả chi tiết</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                placeholder="Nhập mô tả chi tiết về căn hộ..."
-                rows={4}
-                {...register("detailedDescription")}
-                className={errors.detailedDescription ? "border-red-500" : ""}
-              />
-              {errors.detailedDescription && (
-                <p className="text-sm text-red-500 mt-1">
-                  {errors.detailedDescription.message}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                {/* Status */}
+                <div className="space-y-2">
+                  <Label htmlFor="status">Trạng thái</Label>
+                  <Select
+                    value={watch("status")}
+                    onValueChange={(value) => setValue("status", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn trạng thái" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {APARTMENT_STATUS.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
+                {/* Area */}
+                <div className="space-y-2">
+                  <Label htmlFor="area">
+                    Diện tích (m²) <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="area"
+                    {...register("area")}
+                    className={errors.area ? "border-red-500" : ""}
+                  />
+                  {errors.area && (
+                    <p className="text-sm text-red-500">
+                      {errors.area.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Bedrooms */}
+                <div className="space-y-2">
+                  <Label htmlFor="numberBedroom">Phòng ngủ</Label>
+                  <Select
+                    value={watch("numberBedroom")}
+                    onValueChange={(value) => setValue("numberBedroom", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn số phòng ngủ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num} phòng
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bathrooms */}
+                <div className="space-y-2">
+                  <Label htmlFor="numberBathroom">Phòng tắm</Label>
+                  <Select
+                    value={watch("numberBathroom")}
+                    onValueChange={(value) => setValue("numberBathroom", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn số phòng tắm" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num} phòng
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Floor */}
+                <div className="space-y-2">
+                  <Label htmlFor="floor">
+                    Tầng <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="floor"
+                    {...register("floor")}
+                    placeholder="0-50"
+                    className={errors.floor ? "border-red-500" : ""}
+                  />
+                  {errors.floor && (
+                    <p className="text-sm text-red-500">
+                      {errors.floor.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Direction */}
+                <div className="space-y-2">
+                  <Label htmlFor="direction">Hướng</Label>
+                  <Select
+                    value={watch("direction")}
+                    onValueChange={(value) => setValue("direction", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn hướng" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIRECTIONS.map((direction) => (
+                        <SelectItem
+                          key={direction.value}
+                          value={direction.value}
+                        >
+                          {direction.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Interior */}
+                <div className="space-y-2">
+                  <Label htmlFor="interior">Nội thất</Label>
+                  <Select
+                    value={watch("interior")}
+                    onValueChange={(value) => setValue("interior", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn loại nội thất" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INTERIOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Project */}
+                <div className="space-y-2">
+                  <Label htmlFor="projectId">
+                    Dự án <span className="text-red-500">*</span>
+                  </Label>
+                  <SelectWithSearch
+                    options={projects.map((project) => ({
+                      value: project.id.toString(),
+                      label: project.name,
+                    }))}
+                    value={watch("projectId")}
+                    onChange={(value) => setValue("projectId", value)}
+                    placeholder={
+                      projects.length > 0 ? "Chọn dự án" : "Đang tải dự án..."
+                    }
+                    searchPlaceholder="Tìm dự án..."
+                    maxHeight={250}
+                  />
+                  {projects.length === 0 && (
+                    <p className="text-xs text-gray-500">
+                      Đang tải danh sách dự án...
+                    </p>
+                  )}
+                  {errors.projectId && (
+                    <p className="text-sm text-red-500">
+                      {errors.projectId.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Owner Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="ownerName">
+                    Tên chủ căn hộ <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="ownerName"
+                    {...register("ownerName")}
+                    className={errors.ownerName ? "border-red-500" : ""}
+                  />
+                  {errors.ownerName && (
+                    <p className="text-sm text-red-500">
+                      {errors.ownerName.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Owner Phone */}
+                <div className="space-y-2">
+                  <Label htmlFor="ownerPhone">
+                    Số điện thoại chủ căn hộ{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="ownerPhone"
+                    type="tel"
+                    {...register("ownerPhone")}
+                    className={errors.ownerPhone ? "border-red-500" : ""}
+                  />
+                  {errors.ownerPhone && (
+                    <p className="text-sm text-red-500">
+                      {errors.ownerPhone.message}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Additional Sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Highlights */}
           <Card>
             <CardHeader>
@@ -438,197 +744,28 @@ const EditApartment: React.FC = () => {
           </Card>
         </div>
 
-        {/* Right Column - Apartment Information */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Thông tin căn hộ</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Apartment Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Tên căn hộ <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  {...register("name")}
-                  className={errors.name ? "border-red-500" : ""}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
-                )}
-              </div>
-
-              {/* Alias */}
-              <div className="space-y-2">
-                <Label htmlFor="alias">Alias</Label>
-                <Input id="alias" {...register("alias")} />
-              </div>
-
-              {/* Price */}
-              <div className="space-y-2">
-                <Label htmlFor="price">
-                  Giá <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="price"
-                  {...register("price")}
-                  placeholder="Nhập giá..."
-                  className={errors.price ? "border-red-500" : ""}
-                />
-                {errors.price && (
-                  <p className="text-sm text-red-500">{errors.price.message}</p>
-                )}
-              </div>
-
-              {/* Type (Sell/Rent) */}
-              <div className="space-y-2">
-                <Label>Loại</Label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      checked={isSell}
-                      onChange={() => setValue("isSell", true)}
-                      className="text-blue-600"
-                    />
-                    <span className="text-sm">Bán</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      checked={!isSell}
-                      onChange={() => setValue("isSell", false)}
-                      className="text-blue-600"
-                    />
-                    <span className="text-sm">Cho thuê</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div className="space-y-2">
-                <Label htmlFor="status">Trạng thái</Label>
-                <Select onValueChange={(value) => setValue("status", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {APARTMENT_STATUS.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Area */}
-              <div className="space-y-2">
-                <Label htmlFor="area">
-                  Diện tích (m²) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="area"
-                  {...register("area")}
-                  className={errors.area ? "border-red-500" : ""}
-                />
-                {errors.area && (
-                  <p className="text-sm text-red-500">{errors.area.message}</p>
-                )}
-              </div>
-
-              {/* Bedrooms */}
-              <div className="space-y-2">
-                <Label htmlFor="numberBedroom">Phòng ngủ</Label>
-                <Select
-                  onValueChange={(value) => setValue("numberBedroom", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn số phòng ngủ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num} phòng
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Bathrooms */}
-              <div className="space-y-2">
-                <Label htmlFor="numberBathroom">Phòng tắm</Label>
-                <Select
-                  onValueChange={(value) => setValue("numberBathroom", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn số phòng tắm" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num} phòng
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Floor */}
-              <div className="space-y-2">
-                <Label htmlFor="floor">
-                  Tầng <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="floor"
-                  {...register("floor")}
-                  placeholder="0-50"
-                  className={errors.floor ? "border-red-500" : ""}
-                />
-                {errors.floor && (
-                  <p className="text-sm text-red-500">{errors.floor.message}</p>
-                )}
-              </div>
-
-              {/* Direction */}
-              <div className="space-y-2">
-                <Label htmlFor="direction">Hướng</Label>
-                <Select onValueChange={(value) => setValue("direction", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn hướng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DIRECTIONS.map((direction) => (
-                      <SelectItem key={direction.value} value={direction.value}>
-                        {direction.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Interior */}
-              <div className="space-y-2">
-                <Label htmlFor="interior">Nội thất</Label>
-                <Select onValueChange={(value) => setValue("interior", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn loại nội thất" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INTERIOR_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Full Width - Detailed Description */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Mô tả chi tiết</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuillEditor
+              key={`editor-${apartment?.id || "new"}`}
+              value={watch("detailedDescription") || ""}
+              onChange={(content) => setValue("detailedDescription", content)}
+              placeholder="Nhập mô tả chi tiết về căn hộ..."
+              disableImageUpload={true}
+              showWordCount={true}
+              className="min-h-[400px]"
+            />
+            {errors.detailedDescription && (
+              <p className="text-sm text-red-500 mt-2">
+                {errors.detailedDescription.message}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

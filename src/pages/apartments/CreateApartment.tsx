@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,10 +14,10 @@ import {
 import Breadcrumb from "@/components/common/breadcrumb";
 import ApartmentService from "@/services/api/ApartmentService";
 import ProjectService from "@/services/api/ProjectService";
-import type { Project, CreateApartmentDto } from "@/lib/types";
+import type { Project, CreateApartmentDto } from "@/types";
 import { formatCurrency } from "@/utils/format";
 import SelectWithSearch from "@/components/common/SelectWithSearch";
-import TagInput from "@/components/common/TagInput";
+import QuillEditor from "@/components/forms/QuillEditor";
 
 // Validation schema
 const createApartmentSchema = z.object({
@@ -26,10 +26,14 @@ const createApartmentSchema = z.object({
     .min(1, VALIDATION_MESSAGES.REQUIRED)
     .min(3, VALIDATION_MESSAGES.MIN_LENGTH(3))
     .max(100, VALIDATION_MESSAGES.MAX_LENGTH(100)),
-  price: z
+  publicPrice: z
     .string()
     .min(1, VALIDATION_MESSAGES.REQUIRED)
-    .regex(/^\d+$/, "Giá phải là số dương"),
+    .regex(/^\d+$/, "Giá công khai phải là số dương"),
+  privatePrice: z
+    .string()
+    .min(1, VALIDATION_MESSAGES.REQUIRED)
+    .regex(/^\d+$/, "Giá nội bộ phải là số dương"),
   detailedDescription: z
     .string()
     .min(1, VALIDATION_MESSAGES.REQUIRED)
@@ -61,6 +65,17 @@ const createApartmentSchema = z.object({
     .min(1, VALIDATION_MESSAGES.REQUIRED)
     .min(3, VALIDATION_MESSAGES.MIN_LENGTH(3))
     .max(50, VALIDATION_MESSAGES.MAX_LENGTH(50)),
+  ownerName: z
+    .string()
+    .min(1, VALIDATION_MESSAGES.REQUIRED)
+    .min(2, VALIDATION_MESSAGES.MIN_LENGTH(2))
+    .max(100, VALIDATION_MESSAGES.MAX_LENGTH(100)),
+  ownerPhone: z
+    .string()
+    .min(1, VALIDATION_MESSAGES.REQUIRED)
+    .regex(/^[0-9+\-\s()]+$/, "Số điện thoại không hợp lệ")
+    .min(10, "Số điện thoại phải có ít nhất 10 số")
+    .max(15, "Số điện thoại không được quá 15 ký tự"),
 });
 
 type CreateApartmentForm = z.infer<typeof createApartmentSchema>;
@@ -71,8 +86,13 @@ const CreateApartment: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [formattedPrice, setFormattedPrice] = useState<string>("");
-  const [highlights, setHighlights] = useState<string[]>([]);
+  const [formattedPublicPrice, setFormattedPublicPrice] = useState<string>("");
+  const [formattedPrivatePrice, setFormattedPrivatePrice] =
+    useState<string>("");
+  const [legals, setLegals] = useState<{ name: string; sortOrder: number }[]>(
+    []
+  );
+  const [newLegal, setNewLegal] = useState("");
 
   const {
     register,
@@ -87,28 +107,31 @@ const CreateApartment: React.FC = () => {
       status: "0",
       direction: "north",
       interior: "basic",
-      highlights: [],
-      price: "",
+      publicPrice: "",
+      privatePrice: "",
       projectId: "",
+      detailedDescription: "",
+      ownerName: "",
+      ownerPhone: "",
     },
   });
 
   const watchedValues = watch();
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       const response = await ProjectService.getAllProjects();
       setProjects(response.data || []);
     } catch (error) {
       console.error("❌ Error loading projects:", error);
     }
-  };
+  }, []);
 
-  const handleImageUpload = (files: FileList | null) => {
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  const handleImageUpload = useCallback((files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     const newFiles: File[] = [];
@@ -121,58 +144,116 @@ const CreateApartment: React.FC = () => {
 
     setImageFiles((prev) => [...prev, ...newFiles]);
     setImageUrls((prev) => [...prev, ...newUrls]);
-  };
+  }, []);
 
-  const removeImage = (index: number) => {
+  const removeImage = useCallback((index: number) => {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
-    setImageUrls((prev) => prev.filter((_, i) => i !== index));
-  };
+    setImageUrls((prev) => {
+      // Revoke object URL to free memory
+      const urlToRevoke = prev[index];
+      if (urlToRevoke) {
+        URL.revokeObjectURL(urlToRevoke);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
 
-  // Handle price formatting
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
+  const handlePublicPriceChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const inputValue = e.target.value;
+      const cleanValue = inputValue.replace(/[^\d]/g, "");
+      const numericValue = parseFloat(cleanValue) || 0;
+      const formatted = formatCurrency(numericValue);
 
-    // Remove all non-digit characters
-    const cleanValue = inputValue.replace(/[^\d]/g, "");
+      setFormattedPublicPrice(formatted);
+      setValue("publicPrice", cleanValue);
+    },
+    [setValue]
+  );
 
-    // Convert to number and format
-    const numericValue = parseFloat(cleanValue) || 0;
-    const formatted = formatCurrency(numericValue);
+  const handlePrivatePriceChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const inputValue = e.target.value;
+      const cleanValue = inputValue.replace(/[^\d]/g, "");
+      const numericValue = parseFloat(cleanValue) || 0;
+      const formatted = formatCurrency(numericValue);
 
-    // Update formatted display
-    setFormattedPrice(formatted);
+      setFormattedPrivatePrice(formatted);
+      setValue("privatePrice", cleanValue);
+    },
+    [setValue]
+  );
 
-    // Update form value with clean numeric value
-    setValue("price", cleanValue);
-  };
+  const addLegal = useCallback(() => {
+    if (newLegal.trim()) {
+      setLegals((prev) => [
+        ...prev,
+        { name: newLegal.trim(), sortOrder: prev.length },
+      ]);
+      setNewLegal("");
+    }
+  }, [newLegal]);
+
+  const removeLegal = useCallback((index: number) => {
+    setLegals((prev) => {
+      const updatedLegals = prev.filter((_, i) => i !== index);
+      // Tính lại sortOrder cho các item còn lại
+      return updatedLegals.map((legal, i) => ({
+        ...legal,
+        sortOrder: i,
+      }));
+    });
+  }, []);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      imageUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [imageUrls]);
 
   const onSubmit = async (data: CreateApartmentForm) => {
-    // Validate highlights manually
-    if (highlights.length === 0) {
-      alert("Vui lòng thêm ít nhất một điểm nổi bật");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
 
       const apartmentData: CreateApartmentDto = {
         ...data,
-        // Price is already clean string from handlePriceChange
-        price: data.price,
-        // Keep as strings as expected by API
+        publicPrice: data.publicPrice,
+        privatePrice: data.privatePrice,
         numberBedroom: data.numberBedroom,
         numberBathroom: data.numberBathroom,
         floor: data.floor,
         status: data.status,
-        // Convert highlights array to string
-        highlights: highlights.join("\n"),
+        ownerName: data.ownerName,
+        ownerPhone: data.ownerPhone,
+        detailedDescription: data.detailedDescription,
       };
 
       const response = await ApartmentService.create({
         data: apartmentData,
         file: imageFiles,
       });
+
+      // @ts-ignore
+      if (response.data.id && legals.length > 0) {
+        try {
+          // Tạo từng pháp lý một cách bất đồng bộ
+          for (let i = 0; i < legals.length; i++) {
+            const legal = legals[i];
+            const legalData = {
+              name: legal.name,
+              sortOrder: i, // Frontend tự tính sortOrder
+            };
+            // @ts-ignore
+            await ApartmentService.createLegal(response.data.id, legalData);
+          }
+        } catch (legalError) {
+          console.error("❌ Error creating legal entities:", legalError);
+          // Don't fail the whole operation if legal creation fails
+        }
+      } else {
+        console.error("❌ No legal entities to create or missing apartment ID");
+      }
 
       // Navigate to apartment detail page
       if (response.content?.id) {
@@ -188,13 +269,6 @@ const CreateApartment: React.FC = () => {
         status: (error as any)?.response?.status,
         statusText: (error as any)?.response?.statusText,
       });
-      alert(
-        `Có lỗi xảy ra khi tạo căn hộ: ${
-          (error as any)?.response?.data?.message ||
-          (error as any)?.message ||
-          "Unknown"
-        }`
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -267,7 +341,7 @@ const CreateApartment: React.FC = () => {
                   {/* Alias */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">
-                      Alias <span className="text-red-500">*</span>
+                      Mã căn hộ <span className="text-red-500">*</span>
                     </label>
                     <input
                       {...register("alias")}
@@ -281,21 +355,41 @@ const CreateApartment: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Giá */}
+                  {/* Giá công khai */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">
-                      Giá (VNĐ) <span className="text-red-500">*</span>
+                      Giá công khai (VNĐ){" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      value={formattedPrice}
-                      onChange={handlePriceChange}
+                      value={formattedPublicPrice}
+                      onChange={handlePublicPriceChange}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
                       placeholder="Ví dụ: 2.500.000.000"
                     />
-                    {errors.price && (
+                    {errors.publicPrice && (
                       <p className="text-sm text-red-600">
-                        {errors.price.message}
+                        {errors.publicPrice.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Giá nội bộ */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Giá nội bộ (VNĐ) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formattedPrivatePrice}
+                      onChange={handlePrivatePriceChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
+                      placeholder="Ví dụ: 2.200.000.000"
+                    />
+                    {errors.privatePrice && (
+                      <p className="text-sm text-red-600">
+                        {errors.privatePrice.message}
                       </p>
                     )}
                   </div>
@@ -402,7 +496,8 @@ const CreateApartment: React.FC = () => {
                       required
                       error={errors.interior?.message}
                       placeholder="Chọn nội thất"
-                      searchPlaceholder="Tìm nội thất..."
+                      searchPlaceholder="Tìm nội thất hoặc tạo mới"
+                      allowCustomInput={true}
                     />
                   </div>
 
@@ -441,6 +536,42 @@ const CreateApartment: React.FC = () => {
                     />
                   </div>
 
+                  {/* Tên chủ căn hộ */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Tên chủ căn hộ <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      {...register("ownerName")}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
+                      placeholder="Ví dụ: Nguyễn Văn A"
+                    />
+                    {errors.ownerName && (
+                      <p className="text-sm text-red-600">
+                        {errors.ownerName.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Số điện thoại chủ căn hộ */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Số điện thoại chủ căn hộ{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      {...register("ownerPhone")}
+                      type="tel"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
+                      placeholder="Ví dụ: 0901234567"
+                    />
+                    {errors.ownerPhone && (
+                      <p className="text-sm text-red-600">
+                        {errors.ownerPhone.message}
+                      </p>
+                    )}
+                  </div>
+
                   {/* Loại giao dịch */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">
@@ -467,6 +598,80 @@ const CreateApartment: React.FC = () => {
                         />
                         Cho thuê
                       </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Thông tin pháp lý
+                    </label>
+                    <div className="space-y-3">
+                      {legals.map((legal, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border"
+                        >
+                          <input
+                            type="text"
+                            value={legal.name}
+                            onChange={(e) => {
+                              const updatedLegals = [...legals];
+                              updatedLegals[index].name = e.target.value;
+                              setLegals(updatedLegals);
+                            }}
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                            placeholder="Nhập thông tin pháp lý..."
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeLegal(index)}
+                            className="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex space-x-2">
+                        <input
+                          type="text"
+                          placeholder="Nhập thông tin pháp lý..."
+                          value={newLegal}
+                          onChange={(e) => setNewLegal(e.target.value)}
+                          onKeyPress={(e) => e.key === "Enter" && addLegal()}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={addLegal}
+                          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -631,16 +836,20 @@ const CreateApartment: React.FC = () => {
                 Thêm thông tin mô tả và điểm nổi bật của căn hộ
               </p>
             </div>
-            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="p-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
                   Mô tả chi tiết <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  {...register("detailedDescription")}
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none"
+                <QuillEditor
+                  value={watch("detailedDescription")}
+                  onChange={(content) =>
+                    setValue("detailedDescription", content)
+                  }
                   placeholder="Mô tả chi tiết về căn hộ, vị trí, tiện ích..."
+                  disableImageUpload={true}
+                  showWordCount={true}
+                  className="min-h-[300px]"
                 />
                 {errors.detailedDescription && (
                   <p className="text-sm text-red-600">
@@ -649,7 +858,9 @@ const CreateApartment: React.FC = () => {
                 )}
               </div>
 
-              <div className="space-y-2">
+              {/* Legal Information */}
+
+              {/* <div className="space-y-2">
                 <TagInput
                   tags={highlights}
                   onChange={setHighlights}
@@ -659,7 +870,7 @@ const CreateApartment: React.FC = () => {
                   maxTags={8}
                   error={errors.highlights?.message}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 

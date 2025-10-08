@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Project } from "@/lib/types";
+import type { Project } from "@/types";
 import ProjectService from "@/services/api/ProjectService";
 import ApartmentService from "@/services/api/ApartmentService";
 import Breadcrumb from "@/components/common/breadcrumb";
@@ -284,19 +284,6 @@ const ProjectsList: React.FC = () => {
                 </TooltipTrigger>
                 <TooltipContent>Xem</TooltipContent>
               </Tooltip>
-              {/* <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleEditProject(p)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sửa</TooltipContent>
-              </Tooltip> */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

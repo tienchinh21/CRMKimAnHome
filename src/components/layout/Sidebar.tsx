@@ -15,12 +15,17 @@ import {
   Edit3,
   User,
   Settings,
+  Menu,
+  Check,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface NavigationItem {
@@ -54,8 +59,20 @@ const navigationItems: NavigationItem[] = [
   },
   {
     name: "Quản lý Khách hàng",
-    href: ROUTES.CUSTOMERS,
+
     icon: Users,
+    children: [
+      {
+        name: "Quản lý Khách hàng",
+        href: ROUTES.CUSTOMERS,
+        icon: Users,
+      },
+      {
+        name: "Quản lý giao dịch",
+        href: ROUTES.DEALS,
+        icon: DollarSign,
+      },
+    ],
   },
   {
     name: "Quản lý Nội dung",
@@ -75,8 +92,19 @@ const navigationItems: NavigationItem[] = [
   },
   {
     name: "Quản lý Nhân sự",
-    icon: User,
-    href: ROUTES.STAFF,
+    icon: Users,
+    children: [
+      {
+        name: "Quản lý Nhân viên",
+        icon: User,
+        href: "/users",
+      },
+      {
+        name: "Quản lý Đội nhóm",
+        icon: Users,
+        href: "/teams",
+      },
+    ],
   },
   {
     name: "Cấu hình Hệ thống",
@@ -85,7 +113,12 @@ const navigationItems: NavigationItem[] = [
   },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  onClose,
+  isCollapsed = false,
+  onToggleCollapse,
+}) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -112,6 +145,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   // Auto-expand parent if child is active
+  React.useEffect(() => {
+    const activeParent = navigationItems.find(
+      (item) =>
+        item.children &&
+        item.children.some((child) => child.href && isActivePath(child.href))
+    );
+
+    if (activeParent && !expandedItems.includes(activeParent.name)) {
+      setExpandedItems((prev) => [...prev, activeParent.name]);
+    }
+  }, [location.pathname, expandedItems]);
 
   return (
     <>
@@ -123,21 +167,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-full w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto",
+          "fixed left-0 top-0 z-50 h-full bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto",
+          isCollapsed ? "w-16" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <Building2 className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">CRM Admin</span>
-          </div>
-
-          {/* Close button - only show on mobile */}
+        <div className="flex items-center justify-end p-4 border-b border-gray-200">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleCollapse}
+            className="hover:bg-gray-100"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -148,8 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </Button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-2">
           <ul className="space-y-2">
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -161,14 +205,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               return (
                 <li key={item.name}>
                   {item.href ? (
-                    // Regular menu item with link
                     <Link
                       to={item.href}
-                      onClick={onClose} // Close mobile sidebar on navigation
+                      onClick={onClose}
                       className={cn(
-                        "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group",
+                        "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative",
                         isActive
-                          ? "bg-blue-100 text-blue-700"
+                          ? "bg-blue-100 text-blue-700 border-l-4 border-blue-500"
                           : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                       )}
                     >
@@ -181,27 +224,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                               : "text-gray-400 group-hover:text-gray-500"
                           )}
                         />
-                        <span>{item.name}</span>
+                        {!isCollapsed && <span>{item.name}</span>}
                       </div>
 
-                      <ChevronRight
-                        className={cn(
-                          "h-4 w-4 transition-transform",
-                          isActive
-                            ? "text-blue-700"
-                            : "text-gray-400 group-hover:text-gray-500"
-                        )}
-                      />
+                      {!isCollapsed && (
+                        <div className="flex items-center space-x-2">
+                          {isActive && (
+                            <Check className="h-4 w-4 text-blue-700" />
+                          )}
+                          <ChevronRight
+                            className={cn(
+                              "h-4 w-4 transition-transform",
+                              isActive
+                                ? "text-blue-700"
+                                : "text-gray-400 group-hover:text-gray-500"
+                            )}
+                          />
+                        </div>
+                      )}
                     </Link>
                   ) : (
-                    // Parent menu item with submenu
                     <>
                       <button
                         onClick={() => toggleExpanded(item.name)}
                         className={cn(
-                          "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group",
+                          "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative",
                           isActive
-                            ? "bg-blue-100 text-blue-700"
+                            ? "bg-blue-100 text-blue-700 border-l-4 border-blue-500"
                             : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                         )}
                       >
@@ -214,22 +263,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                 : "text-gray-400 group-hover:text-gray-500"
                             )}
                           />
-                          <span>{item.name}</span>
+                          {!isCollapsed && <span>{item.name}</span>}
                         </div>
 
-                        <ChevronDown
-                          className={cn(
-                            "h-4 w-4 transition-transform",
-                            isExpanded ? "rotate-180" : "rotate-0",
-                            isActive
-                              ? "text-blue-700"
-                              : "text-gray-400 group-hover:text-gray-500"
-                          )}
-                        />
+                        {!isCollapsed && (
+                          <div className="flex items-center space-x-2">
+                            {isActive && (
+                              <Check className="h-4 w-4 text-blue-700" />
+                            )}
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 transition-transform",
+                                isExpanded ? "rotate-180" : "rotate-0",
+                                isActive
+                                  ? "text-blue-700"
+                                  : "text-gray-400 group-hover:text-gray-500"
+                              )}
+                            />
+                          </div>
+                        )}
                       </button>
 
                       {/* Submenu */}
-                      {isExpanded && item.children && (
+                      {!isCollapsed && isExpanded && item.children && (
                         <ul className="ml-8 mt-2 space-y-1">
                           {item.children.map((child) => {
                             const ChildIcon = child.icon;
@@ -243,21 +299,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                   to={child.href!}
                                   onClick={onClose}
                                   className={cn(
-                                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group",
+                                    "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative",
                                     isChildActive
-                                      ? "bg-blue-50 text-blue-700 border-l-2 border-blue-500"
+                                      ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500"
                                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                   )}
                                 >
-                                  <ChildIcon
-                                    className={cn(
-                                      "h-4 w-4",
-                                      isChildActive
-                                        ? "text-blue-600"
-                                        : "text-gray-400 group-hover:text-gray-500"
-                                    )}
-                                  />
-                                  <span>{child.name}</span>
+                                  <div className="flex items-center space-x-3">
+                                    <ChildIcon
+                                      className={cn(
+                                        "h-4 w-4",
+                                        isChildActive
+                                          ? "text-blue-600"
+                                          : "text-gray-400 group-hover:text-gray-500"
+                                      )}
+                                    />
+                                    <span>{child.name}</span>
+                                  </div>
+
+                                  {isChildActive && (
+                                    <Check className="h-4 w-4 text-blue-600" />
+                                  )}
                                 </Link>
                               </li>
                             );
@@ -273,12 +335,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="text-xs text-gray-500 text-center">
-            CRM Admin v1.0.0
-            <br />© 2024 Kim Anh Home
+        {!isCollapsed && (
+          <div className="p-4 border-t border-gray-200">
+            <div className="text-xs text-gray-500 text-center">
+              CRM Admin v1.0.0
+              <br />© 2024 Kim Anh Home
+            </div>
           </div>
-        </div>
+        )}
       </aside>
     </>
   );

@@ -49,7 +49,7 @@ export interface ReponseBlogDto {
 }
 
 export interface BlogListParams {
-  spec?: any;
+  filter?: string; // Spring Filter syntax
   pageable?: {
     page?: number;
     size?: number;
@@ -100,11 +100,9 @@ const BlogService = {
       }
     }
 
-    // Add spec params (if needed for filtering)
-    if (params?.spec) {
-      Object.entries(params.spec).forEach(([key, value]) => {
-        queryParams.append(`spec.${key}`, String(value));
-      });
+    // Add filter param
+    if (params?.filter) {
+      queryParams.append("filter", params.filter);
     }
 
     const response = await axiosClient.get(`/blogs?${queryParams.toString()}`);
@@ -152,7 +150,7 @@ const BlogService = {
     pageable?: { page?: number; size?: number }
   ) {
     const params: BlogListParams = {
-      spec: { title: searchTerm }, // Assuming title field can be searched
+      filter: `title ~~ '${searchTerm}'`, // Assuming title field can be searched
       pageable: pageable || { page: 0, size: 10 },
     };
 
@@ -164,21 +162,21 @@ const BlogService = {
     type: "news" | "legal" | "outstanding",
     pageable?: { page?: number; size?: number }
   ) {
-    const spec: any = {};
+    let filter = "";
     switch (type) {
       case "news":
-        spec.isNews = true;
+        filter = "isNews = true";
         break;
       case "legal":
-        spec.isLegal = true;
+        filter = "isLegal = true";
         break;
       case "outstanding":
-        spec.isOutstandingProject = true;
+        filter = "isOutstandingProject = true";
         break;
     }
 
     const params: BlogListParams = {
-      spec,
+      filter,
       pageable: pageable || { page: 0, size: 10 },
     };
 

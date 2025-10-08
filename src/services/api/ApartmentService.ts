@@ -4,10 +4,10 @@ import type {
   UpdateApartmentDto,
   ReponseApartmentDto,
   ReponseDetailApartmentDto,
-  RestResponse,
-  Pageable,
   SpecificationApartment,
-} from "@/lib/types";
+} from "@/types/apartment";
+
+import type { RestResponse, Pageable } from "@/types/common";
 
 // Helper function to extract data from API response
 const extractData = (response: any) => {
@@ -29,7 +29,7 @@ export interface UpdateApartmentPayload {
 }
 
 export interface ApartmentListParams {
-  spec?: SpecificationApartment;
+  filter?: string; // Spring Filter syntax
   pageable?: Pageable;
 }
 
@@ -53,11 +53,9 @@ const ApartmentService = {
       }
     }
 
-    // Add spec params (if needed for filtering)
-    if (params?.spec) {
-      Object.entries(params.spec).forEach(([key, value]) => {
-        queryParams.append(`spec.${key}`, value.toString());
-      });
+    // Add filter param
+    if (params?.filter) {
+      queryParams.append("filter", params.filter);
     }
 
     const response = await axios.get(
@@ -149,10 +147,10 @@ const ApartmentService = {
 
   // Helper methods for common operations
 
-  // Get apartments by project ID (using spec filter)
+  // Get apartments by project ID (using Spring Filter syntax)
   async getByProjectId(projectId: string, pageable?: Pageable) {
     const params: ApartmentListParams = {
-      spec: { projectId },
+      filter: `project.id : '${projectId}'`,
       pageable: pageable || { page: 0, size: 10 },
     };
 
@@ -171,11 +169,55 @@ const ApartmentService = {
   // Search apartments by name or other criteria
   async search(searchTerm: string, pageable?: Pageable) {
     const params: ApartmentListParams = {
-      spec: { name: searchTerm }, // Assuming name field can be searched
+      filter: `name ~ '*${searchTerm}*'`,
       pageable: pageable || { page: 0, size: 10 },
     };
 
     return this.getAll(params);
+  },
+
+  // Legal Management APIs
+  async getLegals(apartmentId: string) {
+    const response = await axios.get(
+      `https://kimanhome.duckdns.org/spring-api/legals?apartmentId=${apartmentId}`
+    );
+    return { ...response, data: extractData(response) };
+  },
+
+  async createLegal(
+    apartmentId: string,
+    legalData: { name: string; sortOrder?: number }
+  ) {
+    const response = await axios.post(
+      "https://kimanhome.duckdns.org/spring-api/legals",
+      {
+        ...legalData,
+        apartmentId,
+        sortOrder: legalData.sortOrder || 0,
+      }
+    );
+    return { ...response, data: extractData(response) };
+  },
+
+  async updateLegal(
+    legalId: string,
+    legalData: { name: string; sortOrder?: number }
+  ) {
+    const response = await axios.put(
+      `https://kimanhome.duckdns.org/spring-api/legals/${legalId}`,
+      {
+        ...legalData,
+        sortOrder: legalData.sortOrder || 0,
+      }
+    );
+    return { ...response, data: extractData(response) };
+  },
+
+  async deleteLegal(legalId: string) {
+    const response = await axios.delete(
+      `https://kimanhome.duckdns.org/spring-api/legals/${legalId}`
+    );
+    return { ...response, data: extractData(response) };
   },
 };
 

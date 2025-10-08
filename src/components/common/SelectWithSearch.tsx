@@ -21,6 +21,7 @@ interface SelectWithSearchProps {
   error?: string;
   label?: string;
   required?: boolean;
+  allowCustomInput?: boolean;
 }
 
 const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
@@ -35,6 +36,7 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
   error,
   label,
   required = false,
+  allowCustomInput = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,15 +53,38 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
 
   // Filter options based on search term
   const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
+    let filtered = options;
 
-    return options.filter((option) =>
-      option.label.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [options, searchTerm]);
+    if (searchTerm) {
+      filtered = options.filter((option) =>
+        option.label.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Add custom input option if allowCustomInput is true and search term doesn't match any option
+    if (
+      allowCustomInput &&
+      searchTerm &&
+      !filtered.some(
+        (option) => option.label.toLowerCase() === searchTerm.toLowerCase()
+      )
+    ) {
+      filtered = [
+        ...filtered,
+        {
+          value: searchTerm,
+          label: `Tạo mới: "${searchTerm}"`,
+        },
+      ];
+    }
+
+    return filtered;
+  }, [options, searchTerm, allowCustomInput]);
 
   // Get selected option label
-  const selectedOption = options.find((option) => option.value === value);
+  const selectedOption =
+    options.find((option) => option.value === value) ||
+    (value && allowCustomInput ? { value, label: value } : null);
 
   // Handle click outside to close dropdown and scroll events
   useEffect(() => {
@@ -291,7 +316,9 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
               >
                 {filteredOptions.length === 0 ? (
                   <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                    Không tìm thấy kết quả
+                    {allowCustomInput
+                      ? "Nhập để tạo mới"
+                      : "Không tìm thấy kết quả"}
                   </div>
                 ) : (
                   filteredOptions.map((option, index) => (
@@ -311,7 +338,9 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
                         "hover:bg-gray-50 transition-colors",
                         option.disabled && "opacity-50 cursor-not-allowed",
                         focusedIndex === index && "bg-blue-50",
-                        value === option.value && "bg-blue-100"
+                        value === option.value && "bg-blue-100",
+                        option.label.startsWith("Tạo mới:") &&
+                          "border-t border-gray-200 bg-green-50 hover:bg-green-100"
                       )}
                     >
                       <span className="text-sm">{option.label}</span>
