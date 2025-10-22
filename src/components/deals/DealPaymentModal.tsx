@@ -3,7 +3,6 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import {
   Dialog,
@@ -103,7 +102,7 @@ const DealPaymentModal: React.FC<DealPaymentModalProps> = ({
     setLoading(true);
     try {
       // Format month to YYYY-MM
-      const monthStr = format(data.month, "yyyy-MM");
+      const monthStr = format(data.month, "yyyy-MM-dd");
 
       const paymentData: CreateDealPaymentRequest = {
         dealId: deal.id,
@@ -112,13 +111,13 @@ const DealPaymentModal: React.FC<DealPaymentModalProps> = ({
       };
 
       await DealService.createPayment(paymentData);
-      toast.success("Chốt doanh thu thành công!");
+      toast.success("Tạo doanh thu thành công!");
       reset();
       setRevenueInput("");
       onSave();
     } catch (error: any) {
       console.error("Error creating payment:", error);
-      toast.error(error.response?.data?.message || "Không thể chốt doanh thu");
+      toast.error(error.response?.data?.message || "Không thể tạo doanh thu");
     } finally {
       setLoading(false);
     }
@@ -135,7 +134,7 @@ const DealPaymentModal: React.FC<DealPaymentModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Chốt Doanh Thu</DialogTitle>
+          <DialogTitle>Tạo Doanh Thu</DialogTitle>
           <DialogDescription>
             Xác nhận doanh thu thực tế cho giao dịch này
           </DialogDescription>
@@ -174,43 +173,46 @@ const DealPaymentModal: React.FC<DealPaymentModalProps> = ({
                 <Controller
                   control={control}
                   name="month"
-                  render={({ field }) => (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground",
-                            errors.month && "border-red-500"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? (
-                            format(field.value, "MMMM yyyy", { locale: vi })
-                          ) : (
-                            <span>Chọn tháng</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={(date) => {
-                            if (date) {
-                              field.onChange(date);
+                  render={({ field }) => {
+                    const [open, setOpen] = React.useState(false);
+                    return (
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                              errors.month && "border-red-500"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? (
+                              format(field.value, "dd/MM/yyyy")
+                            ) : (
+                              <span>Chọn tháng</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => {
+                              if (date) {
+                                field.onChange(date);
+                                setOpen(false);
+                              }
+                            }}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
                             }
-                          }}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                          locale={vi}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  )}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  }}
                 />
                 {errors.month && (
                   <p className="text-sm text-red-600">

@@ -21,17 +21,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import DealService, {
   type Deal,
   type CreateDealRequest,
   type UpdateDealRequest,
 } from "@/services/api/DealService";
 import CustomerService, { type Customer } from "@/services/api/CustomerService";
-import ApartmentService, {
-  type Apartment,
-} from "@/services/api/ApartmentService";
-import CoreEnumService, { type CoreEnum } from "@/services/api/CoreEnumService";
-import UserService, { type User } from "@/services/api/UserService";
+import ApartmentService from "@/services/api/ApartmentService";
+import CoreEnumService from "@/services/api/CoreEnumService";
+import UserService from "@/services/api/UserService";
+import type { ReponseApartmentDto } from "@/types/apartment";
+import type { CoreEnum } from "@/types";
+import type { UserResponse } from "@/types";
+import { formatCurrency } from "@/utils/format";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 const dealSchema = z.object({
   customerId: z.string().min(1, "Vui lòng chọn khách hàng"),
@@ -56,14 +61,18 @@ const DealModal: React.FC<DealModalProps> = ({
   onSave,
   deal,
 }) => {
+  const { can } = usePermission();
+  const canDeleteDeal = can(PERMISSIONS.DEAL_DELETE);
+  const canCompleteDeal = can(PERMISSIONS.DEAL_COMPLETE);
+
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [apartments, setApartments] = useState<ReponseApartmentDto[]>([]);
   const [statusOptions, setStatusOptions] = useState<CoreEnum[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserResponse[]>([]);
+  const [expectedRevenueDisplay, setExpectedRevenueDisplay] = useState("");
 
   const {
-    register,
     handleSubmit,
     formState: { errors },
     reset,
@@ -156,12 +165,31 @@ const DealModal: React.FC<DealModalProps> = ({
       setValue("customerId", deal.customerId);
       setValue("apartmentId", deal.apartmentId);
       setValue("statusDealId", deal.statusDealId || "");
-      setValue("userAssignedId", deal.userAssignedId || "");
+      setValue("userAssignedId", deal.userAssigneeId || "");
       setValue("expectedRevenue", deal.expectedRevenue);
+      setExpectedRevenueDisplay(formatCurrency(deal.expectedRevenue));
     } else {
       reset();
+      setExpectedRevenueDisplay("");
     }
   }, [deal, setValue, reset]);
+
+  const handleRevenueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+
+    // Allow only numbers and dots
+    const cleanValue = inputValue.replace(/[^\d]/g, "");
+
+    if (cleanValue === "") {
+      setExpectedRevenueDisplay("");
+      setValue("expectedRevenue", 0);
+      return;
+    }
+
+    const numericValue = parseInt(cleanValue, 10);
+    setExpectedRevenueDisplay(formatCurrency(numericValue));
+    setValue("expectedRevenue", numericValue);
+  };
 
   const onSubmit = async (data: DealFormData) => {
     setLoading(true);
@@ -272,8 +300,9 @@ const DealModal: React.FC<DealModalProps> = ({
             <Label htmlFor="expectedRevenue">Doanh thu dự kiến (VNĐ) *</Label>
             <Input
               id="expectedRevenue"
-              type="number"
-              {...register("expectedRevenue", { valueAsNumber: true })}
+              type="text"
+              value={expectedRevenueDisplay}
+              onChange={handleRevenueChange}
               className={errors.expectedRevenue ? "border-red-500" : ""}
               placeholder="Nhập doanh thu dự kiến"
             />
@@ -296,11 +325,19 @@ const DealModal: React.FC<DealModalProps> = ({
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map((status) => (
-                    <SelectItem key={status.id} value={status.id}>
-                      {status.name}
-                    </SelectItem>
-                  ))}
+                  {statusOptions
+                    .filter((status) => {
+                      // LEADER can only select up to "Đã kí hợp đồng" status
+                      if (!canCompleteDeal) {
+                        return status.name !== "Hoàn tất";
+                      }
+                      return true;
+                    })
+                    .map((status) => (
+                      <SelectItem key={status.id} value={status.id}>
+                        {status.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -328,13 +365,49 @@ const DealModal: React.FC<DealModalProps> = ({
             </div>
           )}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Hủy
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Đang lưu..." : deal ? "Cập nhật" : "Tạo mới"}
-            </Button>
+          <DialogFooter className="flex justify-between">
+            <div>
+              {deal && canDeleteDeal && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={async () => {
+                    if (
+                      window.confirm(
+                        "Bạn có chắc chắn muốn xóa giao dịch này không?"
+                      )
+                    ) {
+                      try {
+                        setLoading(true);
+                        await DealService.delete(deal.id);
+                        toast.success("Xóa giao dịch thành công!");
+                        onSave();
+                      } catch (error: any) {
+                        console.error("Error deleting deal:", error);
+                        toast.error(
+                          error.response?.data?.message ||
+                            "Không thể xóa giao dịch"
+                        );
+                      } finally {
+                        setLoading(false);
+                      }
+                    }
+                  }}
+                  disabled={loading}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Xóa
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Hủy
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Đang lưu..." : deal ? "Cập nhật" : "Tạo mới"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

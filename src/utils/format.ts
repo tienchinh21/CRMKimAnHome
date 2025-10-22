@@ -122,12 +122,13 @@ export const formatDate = (date: Date | string): string => {
 };
 
 /**
- * Format date and time to Vietnamese format
+ * Format date and time to Vietnamese format with seconds (Vietnam timezone UTC+7)
  * @param date - Date object or date string
- * @returns Formatted datetime string
+ * @returns Formatted datetime string in Vietnam timezone
  *
  * @example
- * formatDateTime(new Date()) // "25/12/2024, 14:30"
+ * formatDateTime(new Date()) // "25/12/2024 14:30:45"
+ * formatDateTime("2025-10-19T01:42:00") // "19/10/2025 08:42:00" (UTC+7)
  */
 export const formatDateTime = (date: Date | string): string => {
   const dateObj = typeof date === "string" ? new Date(date) : date;
@@ -136,7 +137,19 @@ export const formatDateTime = (date: Date | string): string => {
     return "";
   }
 
-  return dateObj.toLocaleString("vi-VN");
+  // Convert to Vietnam timezone (UTC+7)
+  const vietnamTime = new Date(
+    dateObj.toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" })
+  );
+
+  const day = String(vietnamTime.getDate()).padStart(2, "0");
+  const month = String(vietnamTime.getMonth() + 1).padStart(2, "0");
+  const year = vietnamTime.getFullYear();
+  const hours = String(vietnamTime.getHours()).padStart(2, "0");
+  const minutes = String(vietnamTime.getMinutes()).padStart(2, "0");
+  const seconds = String(vietnamTime.getSeconds()).padStart(2, "0");
+
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 };
 
 /**

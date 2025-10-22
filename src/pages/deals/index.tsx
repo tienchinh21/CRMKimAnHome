@@ -10,22 +10,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, User, Building2, DollarSign, Edit } from "lucide-react";
+import { Plus, User, Building2, Eye } from "lucide-react";
 import { type Deal } from "@/services/api/DealService";
 import DealModal from "@/components/deals/DealModal";
 import DealStatusSelector from "@/components/deals/DealStatusSelector";
 import DealPaymentModal from "@/components/deals/DealPaymentModal";
+import DealPaymentListModal from "@/components/deals/DealPaymentListModal";
 import Filter from "@/components/common/Filter";
 import { useDealFilters } from "@/hooks/useDealFilters";
 import { useDealData } from "@/hooks/useDealData";
 import Breadcrumb from "@/components/common/breadcrumb";
+import { formatDateTime } from "@/utils/format";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 const DealList: React.FC = () => {
+  const { can } = usePermission();
+  const canCreatePayment = can(PERMISSIONS.DEAL_PAYMENT_CREATE);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedDealForPayment, setSelectedDealForPayment] =
     useState<Deal | null>(null);
+  const [isPaymentListModalOpen, setIsPaymentListModalOpen] = useState(false);
+  const [selectedDealForList, setSelectedDealForList] = useState<Deal | null>(
+    null
+  );
   const [updatingStatusDealId, setUpdatingStatusDealId] = useState<
     string | null
   >(null);
@@ -57,10 +68,10 @@ const DealList: React.FC = () => {
     setIsModalOpen(true);
   }, []);
 
-  // Handle edit
-  const handleEdit = useCallback((deal: Deal) => {
-    setEditingDeal(deal);
-    setIsModalOpen(true);
+  // Handle view detail (show payment list)
+  const handleViewDetail = useCallback((deal: Deal) => {
+    setSelectedDealForList(deal);
+    setIsPaymentListModalOpen(true);
   }, []);
 
   // Handle modal close
@@ -122,9 +133,20 @@ const DealList: React.FC = () => {
     dealData.loadDeals(filters.filterSearch, filters.getFilters());
   }, [handleClosePayment, dealData, filters]);
 
+  // Handle close payment list modal
+  const handleClosePaymentList = useCallback(() => {
+    setIsPaymentListModalOpen(false);
+    setSelectedDealForList(null);
+  }, []);
+
+  // Handle payment list update
+  const handlePaymentListUpdate = useCallback(() => {
+    dealData.loadDeals(filters.filterSearch, filters.getFilters());
+  }, [dealData, filters]);
+
   // Check if deal status is "Hoàn tất"
   const isCompletedStatus = useCallback((statusName: string) => {
-    return statusName === "Hoàn tất" || statusName === "Hoàn Tất";
+    return statusName === "Đã kí hợp đồng" || statusName === "Đã kí hợp đồng";
   }, []);
 
   // Format currency
@@ -135,32 +157,22 @@ const DealList: React.FC = () => {
     }).format(value);
   };
 
-  // Format date
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
       {/* Header */}
       <Breadcrumb />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Quản lý Giao dịch
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-sm md:text-base text-gray-500 mt-1">
             Quản lý tất cả các giao dịch bất động sản
           </p>
         </div>
-        <Button onClick={handleCreate} className="gap-2">
+        <Button onClick={handleCreate} className="gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
-          Tạo giao dịch mới
+          <span className="sm:inline">Tạo giao dịch mới</span>
         </Button>
       </div>
 
@@ -188,26 +200,38 @@ const DealList: React.FC = () => {
 
       {/* Deals Table */}
       <Card>
-        <CardContent>
+        <CardContent className="">
           {dealData.loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <span className="ml-2 text-gray-600">Đang tải...</span>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Khách hàng</TableHead>
-                    <TableHead>Số điện thoại</TableHead>
-                    <TableHead>Căn hộ</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead>Nhân viên phụ trách</TableHead>
-                    <TableHead>Doanh thu dự kiến</TableHead>
-                    <TableHead>Doanh thu thực tế</TableHead>
-                    <TableHead>Cập nhật</TableHead>
-                    <TableHead>Thao tác</TableHead>
+                    <TableHead className="min-w-[150px]">Khách hàng</TableHead>
+                    <TableHead className="min-w-[110px] hidden md:table-cell">
+                      Số điện thoại
+                    </TableHead>
+                    <TableHead className="min-w-[120px]">Căn hộ</TableHead>
+                    <TableHead className="min-w-[130px] hidden lg:table-cell">
+                      Trạng thái
+                    </TableHead>
+                    <TableHead className="min-w-[140px] hidden xl:table-cell">
+                      Nhân viên phụ trách
+                    </TableHead>
+                    <TableHead className="min-w-[130px]">
+                      Doanh thu DK
+                    </TableHead>
+                    <TableHead className="min-w-[130px] hidden lg:table-cell">
+                      Doanh thu TT
+                    </TableHead>
+                    <TableHead className="min-w-[100px] hidden xl:table-cell">
+                      Cập nhật
+                    </TableHead>
+                    <TableHead className="min-w-[100px]">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -224,27 +248,32 @@ const DealList: React.FC = () => {
                     dealData.deals.map((deal) => (
                       <TableRow key={deal.id}>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium">
-                              {deal.customerName || deal.customerId}
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <User className="h-3 w-3 md:h-4 md:w-4 text-gray-400" />
+                              <span className="font-medium text-sm md:text-base">
+                                {deal.customerName || deal.customerId}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500 md:hidden">
+                              {deal.customerPhone || "-"}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <span className="text-sm text-gray-600">
                             {deal.customerPhone || "-"}
                           </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-gray-400" />
-                            <span>
+                            <Building2 className="h-3 w-3 md:h-4 md:w-4 text-gray-400" />
+                            <span className="text-sm">
                               {deal.apartmentName || deal.apartmentId}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <DealStatusSelector
                             dealId={deal.id}
                             statusId={deal.statusDealId}
@@ -254,50 +283,54 @@ const DealList: React.FC = () => {
                             isUpdating={updatingStatusDealId === deal.id}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden xl:table-cell">
                           <span className="text-sm text-gray-600">
                             {deal.userAssigneeName || "-"}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="font-semibold text-green-600">
+                          <span className="font-semibold text-green-600 text-sm whitespace-nowrap">
                             {formatCurrency(deal.expectedRevenue)}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          <span className="font-semibold text-blue-600">
+                        <TableCell className="hidden lg:table-cell">
+                          <span className="font-semibold text-blue-600 text-sm whitespace-nowrap">
                             {deal.actualRevenue
                               ? formatCurrency(deal.actualRevenue)
                               : "Chưa cập nhật"}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden xl:table-cell">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
-                            {formatDate(deal.updatedAt)}
+                            {deal.updatedAt
+                              ? formatDateTime(deal.updatedAt)
+                              : "-"}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            {/* <Button
+                          <div className="flex items-center gap-1">
+                            <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEdit(deal)}
-                              title="Chỉnh sửa"
+                              onClick={() => handleViewDetail(deal)}
+                              title="Xem chi tiết doanh thu"
+                              className="h-8 w-8 p-0"
                             >
-                              <Edit className="h-4 w-4" />
-                            </Button> */}
-                            {isCompletedStatus(deal.statusDealName || "") && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => handleOpenPayment(deal)}
-                                title="Chốt doanh thu"
-                                className="text-white"
-                              >
-                                <DollarSign className="h-4 w-4 mr-1" />
-                                Chốt doanh thu
-                              </Button>
-                            )}
+                              <Eye className="h-3 w-3 md:h-4 md:w-4" />
+                            </Button>
+                            {isCompletedStatus(deal.statusDealName || "") &&
+                              canCreatePayment && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenPayment(deal)}
+                                  title="Tạo doanh thu"
+                                  disabled={deal.statusDealName === "Hoàn tất"}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Plus className="h-3 w-3 md:h-4 md:w-4" />
+                                </Button>
+                              )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -318,12 +351,20 @@ const DealList: React.FC = () => {
         deal={editingDeal}
       />
 
-      {/* Deal Payment Modal */}
+      {/* Deal Payment Modal (Quick create) */}
       <DealPaymentModal
         isOpen={isPaymentModalOpen}
         onClose={handleClosePayment}
         onSave={handlePaymentSave}
         deal={selectedDealForPayment}
+      />
+
+      {/* Deal Payment List Modal (View & Edit) */}
+      <DealPaymentListModal
+        isOpen={isPaymentListModalOpen}
+        onClose={handleClosePaymentList}
+        onUpdate={handlePaymentListUpdate}
+        deal={selectedDealForList}
       />
     </div>
   );

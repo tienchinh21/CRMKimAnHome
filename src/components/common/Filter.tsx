@@ -44,6 +44,11 @@ export interface FilterConfig {
     value: string;
     onChange: (value: string) => void;
   };
+  public?: {
+    options: FilterOption[];
+    value: string;
+    onChange: (value: string) => void;
+  };
   priceRange?: {
     min: string;
     max: string;
@@ -77,6 +82,7 @@ const Filter: React.FC<FilterProps> = ({
       (config.status?.value && config.status.value !== "all") ||
       (config.type?.value && config.type.value !== "all") ||
       (config.location?.value && config.location.value !== "all") ||
+      (config.public?.value && config.public.value !== "all") ||
       (config.priceRange?.min && config.priceRange.min !== "") ||
       (config.priceRange?.max && config.priceRange.max !== "")
     );
@@ -90,6 +96,7 @@ const Filter: React.FC<FilterProps> = ({
     if (config.status?.value && config.status.value !== "all") count++;
     if (config.type?.value && config.type.value !== "all") count++;
     if (config.location?.value && config.location.value !== "all") count++;
+    if (config.public?.value && config.public.value !== "all") count++;
     if (config.priceRange?.min && config.priceRange.min !== "") count++;
     if (config.priceRange?.max && config.priceRange.max !== "") count++;
     return count;
@@ -241,6 +248,30 @@ const Filter: React.FC<FilterProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {config.location.options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Public Filter */}
+          {config.public && (
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                Trạng thái
+              </Label>
+              <Select
+                value={config.public.value}
+                onValueChange={config.public.onChange}
+              >
+                <SelectTrigger className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  {config.public.options.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Plus } from "lucide-react";
 import { type Customer } from "@/services/api/CustomerService";
 import CustomerModal from "@/components/customers/CustomerModal";
@@ -209,7 +210,6 @@ const CustomerList: React.FC = () => {
       }
 
       if (customer.pipelineId === newPipelineId) {
-        console.log("⏭️ Same pipeline selected, skipping update");
         return;
       }
 
@@ -259,132 +259,156 @@ const CustomerList: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
       {/* Header */}
       <Breadcrumb />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Quản lý Khách hàng
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm md:text-base text-gray-600">
             Quản lý thông tin khách hàng và pipeline
           </p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center space-x-2">
+        <Button
+          onClick={handleCreate}
+          className="flex items-center space-x-2 w-full sm:w-auto"
+        >
           <Plus className="h-4 w-4" />
           <span>Thêm khách hàng</span>
         </Button>
       </div>
 
-      {/* Filter Component */}
-      <Filter
-        config={{
-          search: {
-            placeholder: "Tìm kiếm theo tên hoặc số điện thoại...",
-            value: filters.filterSearch,
-            onChange: filters.setFilterSearch,
-          },
-          status: {
-            options: filters.sourcesOptions,
-            value: filters.filterSources,
-            onChange: filters.setFilterSources,
-          },
-          type: {
-            options: filters.demandOptions,
-            value: filters.filterDemand,
-            onChange: filters.setFilterDemand,
-          },
-          location: {
-            options: filters.pipelineOptions,
-            value: filters.filterPipeline,
-            onChange: filters.setFilterPipeline,
-          },
-        }}
-        onReset={handleFilterReset}
-        onApply={handleFilterApply}
-        onRefresh={() =>
-          customerData.loadCustomers(
-            customerData.currentPage,
-            filters.filterSearch,
-            filters.getFilters()
-          )
-        }
-        loading={customerData.loading}
-      />
+      {/* Customers Section */}
+      <div className="space-y-4">
+        {/* Filter Component */}
+        <Filter
+          config={{
+            search: {
+              placeholder: "Tìm kiếm theo tên hoặc số điện thoại...",
+              value: filters.filterSearch,
+              onChange: filters.setFilterSearch,
+            },
+            status: {
+              options: filters.sourcesOptions,
+              value: filters.filterSources,
+              onChange: filters.setFilterSources,
+            },
+            type: {
+              options: filters.demandOptions,
+              value: filters.filterDemand,
+              onChange: filters.setFilterDemand,
+            },
+            location: {
+              options: filters.pipelineOptions,
+              value: filters.filterPipeline,
+              onChange: filters.setFilterPipeline,
+            },
+          }}
+          onReset={handleFilterReset}
+          onApply={handleFilterApply}
+          onRefresh={() =>
+            customerData.loadCustomers(
+              customerData.currentPage,
+              filters.filterSearch,
+              filters.getFilters()
+            )
+          }
+          loading={customerData.loading}
+        />
 
-      {/* Customer Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Danh sách khách hàng</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {customerData.loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Đang tải...</span>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tên khách hàng</TableHead>
-                    <TableHead>Số điện thoại</TableHead>
-                    <TableHead>Nguồn</TableHead>
-                    <TableHead>Nhu cầu</TableHead>
-                    <TableHead>Dự án</TableHead>
-                    <TableHead>Pipeline</TableHead>
-                    <TableHead>Ghi chú</TableHead>
-                    <TableHead>Lịch hẹn sắp tới</TableHead>
-                    <TableHead>Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customerData.customers.length === 0 ? (
+        {/* Customer Table */}
+        <Card>
+          <CardHeader className="px-4 md:px-6">
+            <CardTitle className="text-lg md:text-xl">
+              Danh sách khách hàng
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="">
+            {customerData.loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600">Đang tải...</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell
-                        colSpan={9}
-                        className="text-center py-8 text-gray-500"
-                      >
-                        Không có dữ liệu
-                      </TableCell>
+                      <TableHead className="min-w-[150px]">
+                        Tên khách hàng
+                      </TableHead>
+                      <TableHead className="min-w-[120px] hidden md:table-cell">
+                        Số điện thoại
+                      </TableHead>
+                      <TableHead className="min-w-[100px] hidden lg:table-cell">
+                        Nguồn
+                      </TableHead>
+                      <TableHead className="min-w-[100px] hidden lg:table-cell">
+                        Nhu cầu
+                      </TableHead>
+                      <TableHead className="min-w-[120px] hidden xl:table-cell">
+                        Dự án
+                      </TableHead>
+                      <TableHead className="min-w-[120px]">Pipeline</TableHead>
+                      <TableHead className="min-w-[150px] hidden xl:table-cell">
+                        Ghi chú
+                      </TableHead>
+                      <TableHead className="min-w-[150px] hidden lg:table-cell">
+                        Lịch hẹn sắp tới
+                      </TableHead>
+                      <TableHead className="min-w-[120px]">Thao tác</TableHead>
                     </TableRow>
-                  ) : (
-                    customerData.customers.map((customer) => (
-                      <CustomerTableRow
-                        key={customer.id}
-                        customer={customer}
-                        pipelineOptions={filters.pipelineOptions}
-                        updatingPipelineCustomerId={updatingPipelineCustomerId}
-                        onPipelineUpdate={handlePipelineUpdate}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onCreateAppointment={handleOpenAppointment}
-                        onViewAppointments={handleOpenAppointmentList}
-                        onCreateDeal={handleOpenDeal}
-                      />
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  </TableHeader>
+                  <TableBody>
+                    {customerData.customers.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={9}
+                          className="text-center py-8 text-gray-500"
+                        >
+                          Không có dữ liệu
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      customerData.customers.map((customer) => (
+                        <CustomerTableRow
+                          key={customer.id}
+                          customer={customer}
+                          pipelineOptions={filters.pipelineOptions}
+                          updatingPipelineCustomerId={
+                            updatingPipelineCustomerId
+                          }
+                          onPipelineUpdate={handlePipelineUpdate}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          onCreateAppointment={handleOpenAppointment}
+                          onViewAppointments={handleOpenAppointmentList}
+                          onCreateDeal={handleOpenDeal}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={customerData.currentPage}
-            totalPages={customerData.totalPages}
-            totalItems={customerData.totalElements}
-            itemsPerPage={customerData.itemsPerPage}
-            onPageChange={customerData.setCurrentPage}
-            onItemsPerPageChange={customerData.setItemsPerPage}
-            showItemsPerPage={true}
-            showInfo={true}
-            className="mt-4"
-          />
-        </CardContent>
-      </Card>
+            {/* Pagination */}
+            <Pagination
+              currentPage={customerData.currentPage}
+              totalPages={customerData.totalPages}
+              totalItems={customerData.totalElements}
+              itemsPerPage={customerData.itemsPerPage}
+              onPageChange={customerData.setCurrentPage}
+              onItemsPerPageChange={customerData.setItemsPerPage}
+              showItemsPerPage={true}
+              showInfo={true}
+              className="mt-4"
+            />
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Customer Modal */}
       <CustomerModal

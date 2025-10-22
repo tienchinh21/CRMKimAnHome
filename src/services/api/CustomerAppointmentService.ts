@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = "https://kimanhome.duckdns.org/spring-api";
+import axiosClient from "@/utils/axiosClient";
 
 export interface CustomerAppointment {
   id: string;
@@ -40,18 +38,22 @@ export interface AppointmentResponse {
 
 const CustomerAppointmentService = {
   // Get all appointments (optional filter by customerId)
-  async getAll(customerId?: string): Promise<AppointmentListResponse> {
+  async getAll(
+    customerId?: string,
+    page: number = 0,
+    size: number = 10
+  ): Promise<AppointmentListResponse> {
     try {
-      const url = customerId
-        ? `${API_BASE_URL}/customer-appointments?customerId=${customerId}`
-        : `${API_BASE_URL}/customer-appointments`;
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("size", size.toString());
 
-      const response = await axios.get(url, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      if (customerId) {
+        params.append("filter", `customer.id : '${customerId}'`);
+      }
+
+      const url = `/customer-appointments?${params.toString()}`;
+      const response = await axiosClient.get(url);
       return response.data;
     } catch (error) {
       console.error("Get appointments error:", error);
@@ -64,15 +66,9 @@ const CustomerAppointmentService = {
     appointment: CreateAppointmentRequest
   ): Promise<AppointmentResponse> {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/customer-appointments`,
-        appointment,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
+      const response = await axiosClient.post(
+        `/customer-appointments`,
+        appointment
       );
       return response.data;
     } catch (error) {
@@ -87,15 +83,9 @@ const CustomerAppointmentService = {
     appointment: CreateAppointmentRequest
   ): Promise<AppointmentResponse> {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/customer-appointments/${id}`,
-        appointment,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
+      const response = await axiosClient.put(
+        `/customer-appointments/${id}`,
+        appointment
       );
       return response.data;
     } catch (error) {
@@ -107,12 +97,7 @@ const CustomerAppointmentService = {
   // Delete appointment
   async delete(id: string): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/customer-appointments/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      await axiosClient.delete(`/customer-appointments/${id}`);
     } catch (error) {
       console.error("Delete appointment error:", error);
       throw error;

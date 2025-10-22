@@ -85,22 +85,30 @@ export const useCustomerData = (
 
   const deleteCustomer = useCallback(
     async (customerId: string, customerName: string) => {
-      if (
-        window.confirm(
-          `Bạn có chắc chắn muốn xóa khách hàng "${customerName}"?`
-        )
-      ) {
-        try {
-          await CustomerService.delete(customerId);
-          toast.success("Xóa khách hàng thành công");
-          return true;
-        } catch (error) {
-          console.error("Error deleting customer:", error);
-          toast.error("Không thể xóa khách hàng");
-          return false;
-        }
-      }
-      return false;
+      // Show confirmation toast
+      return new Promise<boolean>((resolve) => {
+        toast(`Xác nhận xóa khách hàng "${customerName}"`, {
+          description: "Hành động này không thể hoàn tác",
+          action: {
+            label: "Xóa",
+            onClick: async () => {
+              try {
+                await CustomerService.delete(customerId);
+                toast.success("Xóa khách hàng thành công");
+                resolve(true);
+              } catch (error) {
+                console.error("Error deleting customer:", error);
+                toast.error("Không thể xóa khách hàng");
+                resolve(false);
+              }
+            },
+          },
+          cancel: {
+            label: "Hủy",
+            onClick: () => resolve(false),
+          },
+        });
+      });
     },
     []
   );

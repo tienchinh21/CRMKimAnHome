@@ -58,6 +58,13 @@
     --input: 173 20% 88%; /* Light teal input borders */
     --ring: 173 80% 40%; /* Teal focus ring */
     --radius: 0.75rem; /* Slightly larger border radius for modern look */
+
+    /* Modern Chart colors - Premium palette */
+    --chart-1: 173 80% 40%; /* Teal - Primary */
+    --chart-2: 142 76% 36%; /* Green - Success */
+    --chart-3: 38 92% 50%; /* Amber - Warning */
+    --chart-4: 0 84% 60%; /* Red - Danger */
+    --chart-5: 199 89% 48%; /* Blue - Info */
   }
 }
 

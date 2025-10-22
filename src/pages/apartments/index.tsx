@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, Eye, Trash2, Building2 } from "lucide-react";
+import { Plus, Home, Eye, Trash2, Building2, Globe, Lock } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -15,16 +15,24 @@ import DataTable, { type Column } from "@/components/common/DataTable";
 import Filter from "@/components/common/Filter";
 import Pagination from "@/components/common/Pagination";
 import { formatCurrency } from "@/utils/format";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 const ApartmentsList: React.FC = () => {
   const [apartments, setApartments] = useState<ReponseApartmentDto[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Permission checks
+  const { can } = usePermission();
+  const canCreate = can(PERMISSIONS.APARTMENT_CREATE);
+  const canDelete = can(PERMISSIONS.APARTMENT_DELETE);
 
   // Filter states
   const [search, setSearch] = useState("");
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all"); // sell vs rent
+  const [publicFilter, setPublicFilter] = useState("all"); // public vs private
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -104,6 +112,15 @@ const ApartmentsList: React.FC = () => {
     []
   );
 
+  const publicOptions = useMemo(
+    () => [
+      { value: "all", label: "Tất cả trạng thái" },
+      { value: "true", label: "Công khai" },
+      { value: "false", label: "Riêng tư" },
+    ],
+    []
+  );
+
   const filteredApartments = useMemo(() => {
     return apartments.filter((apt) => {
       const matchSearch = `${apt.name} ${apt.alias}`
@@ -116,16 +133,30 @@ const ApartmentsList: React.FC = () => {
         typeFilter === "all" ||
         (typeFilter === "sell" && apt.isSell) ||
         (typeFilter === "rent" && !apt.isSell);
+      const matchPublic =
+        publicFilter === "all" ||
+        (publicFilter === "true" && apt.isPublic) ||
+        (publicFilter === "false" && !apt.isPublic);
 
-      return matchSearch && matchProject && matchStatus && matchType;
+      return (
+        matchSearch && matchProject && matchStatus && matchType && matchPublic
+      );
     });
-  }, [apartments, search, projectFilter, statusFilter, typeFilter]);
+  }, [
+    apartments,
+    search,
+    projectFilter,
+    statusFilter,
+    typeFilter,
+    publicFilter,
+  ]);
 
   const resetFilters = useCallback(() => {
     setSearch("");
     setProjectFilter("all");
     setStatusFilter("all");
     setTypeFilter("all");
+    setPublicFilter("all");
   }, []);
 
   const handleDeleteApartment = useCallback(
@@ -248,6 +279,28 @@ const ApartmentsList: React.FC = () => {
           </span>
         ),
       },
+      {
+        key: "isPublic",
+        header: "Trạng thái",
+        render: (apt) => (
+          <div className="flex items-center gap-2">
+            {apt.isPublic ? (
+              <Globe className="h-4 w-4 text-green-600" />
+            ) : (
+              <Lock className="h-4 w-4 text-gray-600" />
+            )}
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                apt.isPublic
+                  ? "bg-green-100 text-green-800"
+                  : "bg-gray-100 text-gray-800"
+              }`}
+            >
+              {apt.isPublic ? "Công khai" : "Riêng tư"}
+            </span>
+          </div>
+        ),
+      },
     ],
     []
   );
@@ -261,10 +314,12 @@ const ApartmentsList: React.FC = () => {
 
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Quản lý Căn hộ</h1>
-          <Button disabled>
-            <Plus className="h-4 w-4 mr-2" />
-            Tạo căn hộ mới
-          </Button>
+          {canCreate && (
+            <Button disabled>
+              <Plus className="h-4 w-4 mr-2" />
+              Tạo căn hộ mới
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -286,27 +341,29 @@ const ApartmentsList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
       {/* Breadcrumb */}
       <Breadcrumb />
 
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Quản lý Căn hộ
           </h1>
-          <p className="text-gray-600 mt-1 sm:mt-2">
+          <p className="text-sm md:text-base text-gray-600 mt-1">
             Quản lý tất cả các căn hộ trong dự án
           </p>
         </div>
 
-        <Link to="/apartments/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Tạo căn hộ mới
-          </Button>
-        </Link>
+        {canCreate && (
+          <Link to="/apartments/new">
+            <Button className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Tạo căn hộ mới
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filters */}
@@ -333,6 +390,11 @@ const ApartmentsList: React.FC = () => {
             value: typeFilter,
             onChange: setTypeFilter,
           },
+          public: {
+            options: publicOptions,
+            value: publicFilter,
+            onChange: setPublicFilter,
+          },
         }}
         onReset={resetFilters}
         onRefresh={loadApartments}
@@ -350,59 +412,60 @@ const ApartmentsList: React.FC = () => {
             <p className="text-gray-600 mb-6">
               Bắt đầu bằng cách tạo căn hộ đầu tiên của bạn
             </p>
-            <Link to="/apartments/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Tạo căn hộ mới
-              </Button>
-            </Link>
+            {canCreate && (
+              <Link to="/apartments/new">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tạo căn hộ mới
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredApartments}
-          actions={(apt) => (
-            <div className="inline-flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link to={`/apartments/${apt.id}`}>
-                    <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent>Xem chi tiết</TooltipContent>
-              </Tooltip>
-              {/* <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleEditApartment(apt)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sửa</TooltipContent>
-              </Tooltip> */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleDeleteApartment(apt)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Xóa</TooltipContent>
-              </Tooltip>
+        <Card>
+          <CardContent className="">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <DataTable
+                columns={columns}
+                data={filteredApartments}
+                actions={(apt) => (
+                  <div className="inline-flex items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link to={`/apartments/${apt.id}`}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>Xem chi tiết</TooltipContent>
+                    </Tooltip>
+                    {canDelete && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleDeleteApartment(apt)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Xóa</TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                )}
+              />
             </div>
-          )}
-        />
+          </CardContent>
+        </Card>
       )}
 
       {/* Pagination */}

@@ -16,6 +16,8 @@ import DataTable, { type Column } from "@/components/common/DataTable";
 import Filter from "@/components/common/Filter";
 import Pagination from "@/components/common/Pagination";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
+import { CanAccess } from "@/components/auth/CanAccess";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 const ProjectsList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -132,9 +134,7 @@ const ProjectsList: React.FC = () => {
         return;
       }
 
-      console.log("🗑️ Deleting project:", projectToDelete.id);
       await ProjectService.deleteProject(projectToDelete.id);
-      console.log("✅ Project deleted successfully");
 
       setDeleteModalOpen(false);
       setProjectToDelete(null);
@@ -207,27 +207,30 @@ const ProjectsList: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
       {/* Breadcrumb */}
       <Breadcrumb />
 
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Quản lý Dự án
           </h1>
-          <p className="text-gray-600 mt-1 sm:mt-2">
+          <p className="text-sm md:text-base text-gray-600 mt-1">
             Quản lý tất cả các dự án bất động sản
           </p>
         </div>
 
-        <Link to="/projects/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Tạo dự án mới
-          </Button>
-        </Link>
+        {/* ⭐ Chỉ hiển thị nút tạo nếu có quyền */}
+        <CanAccess permission={PERMISSIONS.PROJECT_CREATE}>
+          <Link to="/projects/new">
+            <Button className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Tạo dự án mới
+            </Button>
+          </Link>
+        </CanAccess>
       </div>
 
       {/* Filters */}
@@ -260,46 +263,62 @@ const ProjectsList: React.FC = () => {
             <p className="text-gray-600 mb-6">
               Bắt đầu bằng cách tạo dự án đầu tiên của bạn
             </p>
-            <Link to="/projects/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Tạo dự án mới
-              </Button>
-            </Link>
+            {/* ⭐ Chỉ hiển thị nút tạo nếu có quyền */}
+            <CanAccess permission={PERMISSIONS.PROJECT_CREATE}>
+              <Link to="/projects/new">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tạo dự án mới
+                </Button>
+              </Link>
+            </CanAccess>
           </CardContent>
         </Card>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredProjects}
-          actions={(p) => (
-            <div className="inline-flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link to={`/projects/${p.id}`}>
-                    <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent>Xem</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handleDeleteProject(p)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Xóa</TooltipContent>
-              </Tooltip>
+        <Card>
+          <CardContent className="">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <DataTable
+                columns={columns}
+                data={filteredProjects}
+                actions={(p) => (
+                  <div className="inline-flex items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link to={`/projects/${p.id}`}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>Xem</TooltipContent>
+                    </Tooltip>
+                    {/* ⭐ Chỉ hiển thị nút xóa nếu có quyền */}
+                    <CanAccess permission={PERMISSIONS.PROJECT_DELETE}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleDeleteProject(p)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Xóa</TooltipContent>
+                      </Tooltip>
+                    </CanAccess>
+                  </div>
+                )}
+              />
             </div>
-          )}
-        />
+          </CardContent>
+        </Card>
       )}
 
       {/* Pagination */}

@@ -34,19 +34,19 @@ const CustomerTableRow: React.FC<CustomerTableRowProps> = React.memo(
     return (
       <TableRow>
         <TableCell className="font-medium">{customer.fullName}</TableCell>
-        
+
         <TableCell className="text-sm text-gray-600">
           {customer.phoneNumber}
         </TableCell>
-        
+
         <TableCell>
           <Badge variant="secondary">{customer.sourcesName || "-"}</Badge>
         </TableCell>
-        
+
         <TableCell>
           <Badge variant="outline">{customer.demandName || "-"}</Badge>
         </TableCell>
-        
+
         <TableCell>
           <Badge
             variant="default"
@@ -55,7 +55,7 @@ const CustomerTableRow: React.FC<CustomerTableRowProps> = React.memo(
             {customer.projectName || "-"}
           </Badge>
         </TableCell>
-        
+
         <TableCell>
           <PipelineSelector
             customerId={customer.id}
@@ -66,15 +66,15 @@ const CustomerTableRow: React.FC<CustomerTableRowProps> = React.memo(
             isUpdating={updatingPipelineCustomerId === customer.id}
           />
         </TableCell>
-        
+
         <TableCell className="text-sm text-gray-600 max-w-xs truncate">
           {customer.note || "-"}
         </TableCell>
-        
+
         <TableCell className="min-w-[250px]">
           <UpcomingAppointments appointments={customer.upcomingAppointments} />
         </TableCell>
-        
+
         <TableCell>
           <CustomerActions
             customer={customer}
@@ -93,4 +93,3 @@ const CustomerTableRow: React.FC<CustomerTableRowProps> = React.memo(
 CustomerTableRow.displayName = "CustomerTableRow";
 
 export default CustomerTableRow;
-

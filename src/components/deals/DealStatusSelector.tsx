@@ -7,6 +7,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { type FilterOption } from "@/components/common/Filter";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 interface DealStatusSelectorProps {
   dealId: string;
@@ -26,6 +28,9 @@ const DealStatusSelector: React.FC<DealStatusSelectorProps> = React.memo(
     onStatusChange,
     isUpdating,
   }) => {
+    const { can } = usePermission();
+    const canCompleteDeal = can(PERMISSIONS.DEAL_COMPLETE);
+
     // Find status ID from name if ID is missing
     const currentStatusId = useMemo(() => {
       if (statusId) return statusId;
@@ -39,8 +44,17 @@ const DealStatusSelector: React.FC<DealStatusSelectorProps> = React.memo(
     }, [statusId, statusName, statusOptions]);
 
     const filteredOptions = useMemo(
-      () => statusOptions.filter((option) => option.value !== "all"),
-      [statusOptions]
+      () =>
+        statusOptions
+          .filter((option) => option.value !== "all")
+          .filter((option) => {
+            // LEADER can only select up to "Đã kí hợp đồng" status
+            if (!canCompleteDeal) {
+              return option.label !== "Hoàn tất";
+            }
+            return true;
+          }),
+      [statusOptions, canCompleteDeal]
     );
 
     return (
@@ -76,4 +90,3 @@ const DealStatusSelector: React.FC<DealStatusSelectorProps> = React.memo(
 DealStatusSelector.displayName = "DealStatusSelector";
 
 export default DealStatusSelector;
-

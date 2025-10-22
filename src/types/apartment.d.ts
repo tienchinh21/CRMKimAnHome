@@ -18,6 +18,7 @@ export interface CreateApartmentPayload {
     projectId: string;
     isSell: boolean; // true: bán, false: cho thuê
     alias: string;
+    isPublic: boolean; // true: công khai, false: riêng tư
   };
   file: string[]; // File upload paths (binary format)
 }
@@ -39,6 +40,7 @@ export interface UpdateApartmentPayload {
     projectId?: string;
     isSell?: boolean;
     alias?: string;
+    isPublic?: boolean;
   };
   files?: string[]; // File upload paths
 }
@@ -61,6 +63,7 @@ export interface ReponseApartmentDto {
   isPublic: boolean;
   ownerName: string;
   ownerPhone: string;
+  projectName?: string;
 }
 
 export interface ReponseDetailApartmentDto {

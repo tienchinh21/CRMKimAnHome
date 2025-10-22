@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Image as ImageIcon } from "lucide-react";
 import ImageWithFallback from "@/components/common/ImageWithFallback";
-import type { ProjectImage } from "@/lib/types";
+import type { ProjectImage } from "@/types/project";
 
 interface ProjectImageGalleryProps {
   title?: string;
@@ -27,7 +27,7 @@ const ProjectImageGallery: React.FC<ProjectImageGalleryProps> = ({
       </CardHeader> */}
       <CardContent>
         {images && images.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-4 p-4">
             {/* Main Image - 16:9 aspect ratio */}
             <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
               <ImageWithFallback

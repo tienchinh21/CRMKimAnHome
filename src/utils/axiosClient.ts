@@ -4,14 +4,21 @@ const baseURL = import.meta.env.VITE_REACT_URL;
 
 const axiosClient: any = axios.create({
   baseURL,
-  headers: {
-    "Content-Type": "application/json",
-  },
   withCredentials: false,
 });
 
-// Simple interceptors for logging and error normalization
 axiosClient.interceptors.request.use((config: any) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  // Only set Content-Type for non-FormData requests
+  // For FormData, let axios set it automatically with boundary
+  if (!(config.data instanceof FormData)) {
+    config.headers["Content-Type"] = "application/json";
+  }
+  
   return config;
 });
 

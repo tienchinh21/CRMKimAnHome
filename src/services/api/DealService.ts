@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = "https://kimanhome.duckdns.org/spring-api";
+import axiosClient from "@/utils/axiosClient";
 
 export interface Deal {
   id: string;
@@ -17,6 +15,7 @@ export interface Deal {
   actualRevenue?: number;
   createdAt?: string;
   updatedAt?: string;
+  dealPayments?: DealPayment[];
 }
 
 export interface CreateDealRequest {
@@ -30,9 +29,9 @@ export interface UpdateDealRequest {
   apartmentId: string;
   customerId: string;
   statusDealId: string;
-  userAssigneeId: string;
   expectedRevenue: number;
   actualRevenue?: number;
+  userAssignedId?: string;
 }
 
 export interface DealPayment {
@@ -94,16 +93,9 @@ const DealService = {
         queryParams.append("filter", filter);
       }
 
-      const url = filter
-        ? `${API_BASE_URL}/deals?${queryParams.toString()}`
-        : `${API_BASE_URL}/deals`;
+      const url = filter ? `/deals?${queryParams.toString()}` : `/deals`;
 
-      const response = await axios.get(url, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      const response = await axiosClient.get(url);
       return response.data;
     } catch (error) {
       console.error("Get all deals error:", error);
@@ -114,12 +106,7 @@ const DealService = {
   // Get deal by ID
   async getById(id: string): Promise<DealResponse> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/deals/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      const response = await axiosClient.get(`/deals/${id}`);
       return response.data;
     } catch (error) {
       console.error("Get deal by ID error:", error);
@@ -130,12 +117,7 @@ const DealService = {
   // Create new deal
   async create(dealData: CreateDealRequest): Promise<DealResponse> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/deals`, dealData, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      const response = await axiosClient.post(`/deals`, dealData);
       return response.data;
     } catch (error) {
       console.error("Create deal error:", error);
@@ -146,16 +128,7 @@ const DealService = {
   // Update deal
   async update(dealData: UpdateDealRequest): Promise<DealResponse> {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/deals/${dealData.id}`,
-        dealData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
+      const response = await axiosClient.put(`/deals/${dealData.id}`, dealData);
       return response.data;
     } catch (error) {
       console.error("Update deal error:", error);
@@ -183,15 +156,7 @@ const DealService = {
   // Get all payments for a deal
   async getPaymentsByDealId(dealId: string): Promise<DealPaymentListResponse> {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/deal-payments?dealId=${dealId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
+      const response = await axiosClient.get(`/deal-payments?dealId=${dealId}`);
       return response.data;
     } catch (error) {
       console.error("Get deal payments error:", error);
@@ -202,12 +167,7 @@ const DealService = {
   // Get payment by ID
   async getPaymentById(id: string): Promise<DealPaymentResponse> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/deal-payments/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      const response = await axiosClient.get(`/deal-payments/${id}`);
       return response.data;
     } catch (error) {
       console.error("Get payment by ID error:", error);
@@ -220,16 +180,7 @@ const DealService = {
     paymentData: CreateDealPaymentRequest
   ): Promise<DealPaymentResponse> {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/deal-payments`,
-        paymentData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
+      const response = await axiosClient.post(`/deal-payments`, paymentData);
       return response.data;
     } catch (error) {
       console.error("Create payment error:", error);
@@ -242,15 +193,9 @@ const DealService = {
     paymentData: UpdateDealPaymentRequest
   ): Promise<DealPaymentResponse> {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/deal-payments/${paymentData.id}`,
-        paymentData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
+      const response = await axiosClient.put(
+        `/deal-payments/${paymentData.id}`,
+        paymentData
       );
       return response.data;
     } catch (error) {
@@ -262,12 +207,7 @@ const DealService = {
   // Delete payment
   async deletePayment(id: string): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/deal-payments/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      await axiosClient.delete(`/deal-payments/${id}`);
     } catch (error) {
       console.error("Delete payment error:", error);
       throw error;

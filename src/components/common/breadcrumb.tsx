@@ -75,6 +75,12 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
         case "system-config":
           label = "Quản lý Cấu hình Hệ thống";
           break;
+        case "payrolls":
+          label = "Quản lý Bảng lương";
+          break;
+        case "teams":
+          label = "Quản lý Đội nhóm";
+          break;
         default:
           // Show project name if it's a project ID and we have projectName
           if (

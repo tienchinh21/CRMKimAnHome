@@ -22,10 +22,14 @@ import BlogCategoriesList from "@/pages/blog/BlogCategoriesList";
 import SystemConfig from "@/pages/system-config/SystemConfig";
 import UserManagement from "@/pages/users";
 import TeamManagement from "@/pages/teams";
+import TeamDashboard from "@/pages/teams/dashboard";
 import CustomerManagement from "@/pages/customers";
 import DealManagement from "@/pages/deals";
+import PayrollManagement from "@/pages/payrolls";
+import BonusManagement from "@/pages/bonuses";
 import NotFound from "@/pages/NotFound";
 import PublicRoute from "./components/auth/PublicRoute";
+import { RoleDebugger } from "@/components/debug/RoleDebugger";
 
 function App() {
   return (
@@ -76,8 +80,14 @@ function App() {
               <Route path="blog-categories" element={<BlogCategoriesList />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="teams" element={<TeamManagement />} />
+              <Route
+                path="teams/:teamId/dashboard"
+                element={<TeamDashboard />}
+              />
               <Route path="customers" element={<CustomerManagement />} />
               <Route path="deals" element={<DealManagement />} />
+              <Route path="payrolls" element={<PayrollManagement />} />
+              <Route path="bonuses" element={<BonusManagement />} />
               <Route path="system-config" element={<SystemConfig />} />
             </Route>
 
@@ -85,6 +95,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster position="top-right" richColors />
+          {/* <RoleDebugger /> */}
         </Router>
       </AuthProvider>
     </Provider>

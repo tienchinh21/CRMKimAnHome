@@ -38,7 +38,6 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({
   team,
   onSuccess,
   users,
-  trigger,
 }) => {
   const [submitting, setSubmitting] = useState(false);
 
@@ -89,15 +88,6 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm">
-            <Edit className="h-4 w-4 mr-2" />
-            Chỉnh sửa
-          </Button>
-        )}
-      </DialogTrigger>
-
       <DialogContent className="max-w-2xl w-full p-0 flex flex-col border border-gray-200">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 bg-white">

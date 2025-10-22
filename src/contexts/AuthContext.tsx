@@ -10,6 +10,7 @@ import {
 } from "@/store/authSlice";
 import type { User } from "@/store/authSlice";
 import type { UserProfile } from "@/services/api/AuthService";
+import type { UserRole } from "@/lib/rbac/types";
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  userRole: UserRole | null;
   login: (phoneNumber: string, password: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
@@ -33,6 +35,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { user, userProfile, isAuthenticated, isLoading, error } =
     useAppSelector((state) => state.auth);
 
+  // ⭐ Lấy role từ userProfile
+  const userRole = (userProfile?.roleNames?.[0] || null) as UserRole | null;
+
   // Initialize auth on app start
   useEffect(() => {
     dispatch(initializeAuth());
@@ -42,7 +47,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await dispatch(loginAsync({ phoneNumber, password })).unwrap();
       // After successful login, get user profile
-      dispatch(getCurrentUserAsync());
+      // ⭐ IMPORTANT: await để đảm bảo userProfile được load trước khi redirect
+      await dispatch(getCurrentUserAsync()).unwrap();
     } catch (error) {
       // Error is handled by Redux store
       throw error;
@@ -63,6 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     isLoading,
     error,
+    userRole,
     login,
     logout: handleLogout,
     clearError: handleClearError,

@@ -105,16 +105,11 @@ const CreateDealModal: React.FC<CreateDealModalProps> = ({
 
       // If customer has projectId, filter apartments by project
       if (customer?.projectId) {
-        console.log(
-          "🎯 Filtering apartments by projectId:",
-          customer.projectId
-        );
         response = await ApartmentService.getByProjectId(customer.projectId, {
           page: 0,
           size: 100,
         });
       } else {
-        console.log("🏠 Loading all apartments (no projectId filter)");
         response = await ApartmentService.getAll({
           pageable: { page: 0, size: 100 }, // Get first 100 apartments
         });
@@ -126,13 +121,6 @@ const CreateDealModal: React.FC<CreateDealModalProps> = ({
         response.data?.response ||
         response.data?.content ||
         [];
-
-      console.log("🏠 Loaded apartments:", {
-        projectId: customer?.projectId,
-        projectName: customer?.projectName,
-        apartmentCount: apartmentData.length,
-        apartments: apartmentData,
-      });
 
       setApartments(Array.isArray(apartmentData) ? apartmentData : []);
     } catch (error) {
@@ -178,8 +166,6 @@ const CreateDealModal: React.FC<CreateDealModalProps> = ({
         customerId: customer.id,
         expectedRevenue: data.expectedRevenue,
       };
-
-      console.log("💰 Creating deal:", dealData);
 
       await DealService.create(dealData);
 

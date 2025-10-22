@@ -79,16 +79,25 @@ const AppointmentListModal: React.FC<AppointmentListModalProps> = ({
   };
 
   const handleDelete = async (appointment: CustomerAppointment) => {
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa lịch hẹn này?\n\nThời gian: ${formatDateTime(
-          appointment.time
-        )}\nGhi chú: ${appointment.note}`
-      )
-    ) {
-      return;
-    }
+    // Show confirmation toast
+    toast("Xác nhận xóa lịch hẹn", {
+      description: `Thời gian: ${formatDateTime(appointment.time)}\nGhi chú: ${
+        appointment.note
+      }`,
+      action: {
+        label: "Xóa",
+        onClick: async () => {
+          await performDelete(appointment);
+        },
+      },
+      cancel: {
+        label: "Hủy",
+        onClick: () => {},
+      },
+    });
+  };
 
+  const performDelete = async (appointment: CustomerAppointment) => {
     try {
       await CustomerAppointmentService.delete(appointment.id);
       toast.success("Xóa lịch hẹn thành công");

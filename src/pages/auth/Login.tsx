@@ -133,7 +133,7 @@ const Login: React.FC = () => {
                     ĐĂNG NHẬP
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   <form onSubmit={handleSubmit} className="space-y-6">
                     {/* General Error */}
                     {error && (

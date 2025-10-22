@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -790,6 +790,25 @@ const ApartmentDetail: React.FC = () => {
                         ))}
                       </select>
                     </div>
+
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">
+                        Hiển thị công khai
+                      </label>
+                      <select
+                        value={editData.isPublic ? "public" : "private"}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "isPublic",
+                            e.target.value === "public"
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      >
+                        <option value="public">Công khai</option>
+                        <option value="private">Riêng tư</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -1087,6 +1106,18 @@ const ApartmentDetail: React.FC = () => {
                         className={`px-3 py-1 text-sm font-medium rounded-full ${statusInfo.color}`}
                       >
                         {statusInfo.label}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                      <span className="text-sm text-gray-600">Hiển thị</span>
+                      <Badge
+                        className={`px-3 py-1 text-sm font-medium rounded-full ${
+                          apartment.isPublic
+                            ? "bg-green-100 text-green-800 border-green-200"
+                            : "bg-gray-100 text-gray-800 border-gray-200"
+                        }`}
+                      >
+                        {apartment.isPublic ? "Công khai" : "Riêng tư"}
                       </Badge>
                     </div>
                   </div>

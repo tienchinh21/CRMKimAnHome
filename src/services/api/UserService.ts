@@ -1,4 +1,5 @@
-import axios from "axios";
+import axiosClient from "@/utils/axiosClient";
+import { extractData, createFormDataWithJson } from "@/utils/apiHelpers";
 import type {
   UserResponse,
   UserDetailResponse,
@@ -6,14 +7,6 @@ import type {
   Pageable,
 } from "@/types";
 import type { CreateUserDto } from "@/types/team";
-
-// Helper function to extract data from API response
-const extractData = (response: any) => {
-  if (response.data.content === null || response.data.content === undefined) {
-    return response.data;
-  }
-  return response.data.content || response.data;
-};
 
 export interface UserListParams {
   spec?: any;
@@ -53,17 +46,15 @@ const UserService = {
       queryParams.append("filter", params.filter);
     }
 
-    const response = await axios.get(
-      `https://kimanhome.duckdns.org/spring-api/users?${queryParams.toString()}`
+    const response = await axiosClient.get(
+      `/users?${queryParams.toString()}`
     );
     return { ...response, data: extractData(response) };
   },
 
   // Get user by ID
   async getById(id: string): Promise<{ data: UserDetailResponse }> {
-    const response = await axios.get(
-      `https://kimanhome.duckdns.org/spring-api/users/${id}`
-    );
+    const response = await axiosClient.get(`/users/${id}`);
     return { data: response.data.content };
   },
 
@@ -72,23 +63,9 @@ const UserService = {
     data: CreateUserDto;
     file?: File;
   }): Promise<{ data: UserResponse }> {
-    const formData = new FormData();
+    const formData = createFormDataWithJson(payload.data, payload.file);
 
-    // Add user data as Blob with application/json type
-    const dataBlob = new Blob([JSON.stringify(payload.data)], {
-      type: "application/json",
-    });
-    formData.append("data", dataBlob);
-
-    // Add file if provided
-    if (payload.file) {
-      formData.append("file", payload.file);
-    }
-
-    const response = await axios.post(
-      "https://kimanhome.duckdns.org/spring-api/users",
-      formData
-    );
+    const response = await axiosClient.post("/users", formData);
 
     return { data: response.data.content };
   },
@@ -98,30 +75,16 @@ const UserService = {
     id: string,
     payload: { data: UpdateUserDto; file?: File }
   ): Promise<{ data: UserResponse }> {
-    const formData = new FormData();
+    const formData = createFormDataWithJson(payload.data, payload.file);
 
-    // Add user data as Blob with application/json type
-    const dataBlob = new Blob([JSON.stringify(payload.data)], {
-      type: "application/json",
-    });
-    formData.append("data", dataBlob);
-
-    // Add file if provided
-    if (payload.file) {
-      formData.append("file", payload.file);
-    }
-
-    const response = await axios.put(
-      `https://kimanhome.duckdns.org/spring-api/users/${id}`,
-      formData
-    );
+    const response = await axiosClient.put(`/users/${id}`, formData);
 
     return { data: response.data.content };
   },
 
   // Delete user
   async delete(id: string): Promise<void> {
-    await axios.delete(`https://kimanhome.duckdns.org/spring-api/users/${id}`);
+    await axiosClient.delete(`/users/${id}`);
   },
 };
 

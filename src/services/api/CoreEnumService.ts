@@ -1,35 +1,16 @@
-import axios from "axios";
+import axiosClient from "@/utils/axiosClient";
+import { extractData } from "@/utils/apiHelpers";
 import type { CoreEnum, CreateCoreEnumDto } from "@/types";
 
-// Helper function to extract data from API response
-export const extractData = (response: any) => {
-  if (response.data.content === null || response.data.content === undefined) {
-    return response.data;
-  }
-  return response.data.content || response.data;
-};
-
 const CoreEnumService = {
-  // Get all core enums
   async getAll(): Promise<{ data: CoreEnum[] }> {
-    const response = await axios.get(
-      "https://kimanhome.duckdns.org/spring-api/core-enum"
-    );
+    const response = await axiosClient.get("/core-enum");
     return { data: response.data };
   },
 
-  // Get core enums by type
   async getByType(type: string): Promise<{ data: CoreEnum[] }> {
     try {
-      const response = await axios.get(
-        `https://kimanhome.duckdns.org/spring-api/core-enum/${type}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
+      const response = await axiosClient.get(`/core-enum/${type}`);
       return { data: extractData(response) };
     } catch (error) {
       console.error(`Get core enum by type ${type} error:`, error);
@@ -37,20 +18,13 @@ const CoreEnumService = {
     }
   },
 
-  // Get core enum by type and name
   async getByName(type: string, name: string): Promise<{ data: CoreEnum }> {
-    const response = await axios.get(
-      `https://kimanhome.duckdns.org/spring-api/core-enum/${type}/${name}`
-    );
+    const response = await axiosClient.get(`/core-enum/${type}/${name}`);
     return { data: response.data };
   },
 
-  // Create new core enum
   async create(enumData: CreateCoreEnumDto): Promise<{ data: CoreEnum }> {
-    const response = await axios.post(
-      "https://kimanhome.duckdns.org/spring-api/core-enum",
-      enumData
-    );
+    const response = await axiosClient.post("/core-enum", enumData);
     return { data: response.data };
   },
 };

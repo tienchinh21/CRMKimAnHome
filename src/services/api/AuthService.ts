@@ -156,6 +156,11 @@ const AuthService = {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+
+      // ⭐ Debug logging
+      console.log("📡 getCurrentUser response:", response.data);
+      console.log("📡 roleNames:", response.data?.content?.roleNames);
+
       return response.data;
     } catch (error) {
       console.error("Get current user error:", error);

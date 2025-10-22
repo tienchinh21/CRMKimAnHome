@@ -67,7 +67,8 @@ const TeamDetailModal: React.FC<TeamDetailModalProps> = ({
     try {
       setLoading(true);
       const response = await TeamService.getById(team.id);
-      setTeamDetail(response.data);
+      // @ts-ignore
+      setTeamDetail(response.data.content.members);
     } catch (error) {
       console.error("Error loading team detail:", error);
     } finally {
@@ -272,11 +273,11 @@ const TeamDetailModal: React.FC<TeamDetailModalProps> = ({
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Users className="h-5 w-5 mr-2 text-green-600" />
-                  Thành viên ({teamDetail?.members?.length || 0})
+                  Thành viên ({teamDetail?.length || 0})
                 </h3>
-                {teamDetail?.members && teamDetail.members.length > 0 ? (
+                {teamDetail && teamDetail.length > 0 ? (
                   <div className="space-y-3">
-                    {teamDetail.members.map((member) => (
+                    {teamDetail.map((member) => (
                       <div
                         key={member.id}
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"

@@ -78,8 +78,6 @@ const TeamCreateModal: React.FC<TeamCreateModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-
       <DialogContent className="max-w-2xl w-full p-0 flex flex-col border border-gray-200">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 bg-white">

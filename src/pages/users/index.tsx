@@ -337,18 +337,21 @@ const UserManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Quản lý nhân viên
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm md:text-base text-gray-600">
             Quản lý thông tin và quyền hạn nhân viên
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          className="w-full sm:w-auto"
+        >
           <UserPlus className="h-4 w-4 mr-2" />
           Thêm nhân viên
         </Button>
@@ -364,13 +367,15 @@ const UserManagement: React.FC = () => {
 
       {/* Data Table */}
       <Card>
-        <CardContent className="p-0">
-          <DataTable
-            columns={columns}
-            data={filteredUsers}
-            actions={actions}
-            emptyMessage="Không tìm thấy nhân viên nào"
-          />
+        <CardContent className="">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <DataTable
+              columns={columns}
+              data={filteredUsers}
+              actions={actions}
+              emptyMessage="Không tìm thấy nhân viên nào"
+            />
+          </div>
         </CardContent>
       </Card>
 

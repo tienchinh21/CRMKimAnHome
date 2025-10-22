@@ -11,14 +11,32 @@ import Filter, { type FilterConfig } from "@/components/common/Filter";
 import TeamCreateModal from "@/components/teams/TeamCreateModal";
 import TeamEditModal from "@/components/teams/TeamEditModal";
 import TeamDetailModal from "@/components/teams/TeamDetailModal";
+import TeamMemberCustomersTab from "@/components/teams/TeamMemberCustomersTab";
+import TeamDashboardModal from "@/components/teams/TeamDashboardModal";
 
-import type { TeamResponse, UserResponse } from "@/types";
-import { Trash2, Eye, Users, UserCheck, UserPlus } from "lucide-react";
+import type { TeamResponse, UserResponse, TeamMember } from "@/types";
+import {
+  Trash2,
+  Eye,
+  Users,
+  UserCheck,
+  UserPlus,
+  BarChart3,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TeamService from "@/services/api/TeamService";
 import UserService from "@/services/api/UserService";
+import { usePermission } from "@/hooks/usePermission";
+import { useNavigate } from "react-router-dom";
+import Breadcrumb from "@/components/common/breadcrumb";
 
 const TeamManagement: React.FC = () => {
+  // ⭐ Check user role
+  const { isRole } = usePermission();
+  const isAdmin = isRole("ADMIN");
+  const isLeader = isRole("LEADER");
+  const navigate = useNavigate();
+  // ADMIN states
   const [teams, setTeams] = useState<TeamResponse[]>([]);
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [filteredTeams, setFilteredTeams] = useState<TeamResponse[]>([]);
@@ -26,7 +44,17 @@ const TeamManagement: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDashboardModal, setShowDashboardModal] = useState(false);
+  const [selectedTeamForDashboard, setSelectedTeamForDashboard] =
+    useState<string>("");
   const [loading, setLoading] = useState(false);
+
+  // LEADER states
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [allTeamMembersCustomers, setAllTeamMembersCustomers] = useState<any[]>(
+    []
+  );
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,7 +72,10 @@ const TeamManagement: React.FC = () => {
   useEffect(() => {
     loadTeams();
     loadUsers();
-  }, []);
+    if (isLeader) {
+      loadAllTeamMembersCustomers();
+    }
+  }, [isAdmin, isLeader]);
 
   // Apply filters
   useEffect(() => {
@@ -66,11 +97,31 @@ const TeamManagement: React.FC = () => {
   const loadTeams = async () => {
     try {
       setLoading(true);
-      const response = await TeamService.getAll();
-      // @ts-ignore
-      setTeams(response.data.content || []);
+      let response;
+
+      // ⭐ Load teams based on role
+      if (isAdmin) {
+        response = await TeamService.getAll();
+        // @ts-ignore
+        setTeams(response.data.content || []);
+        setTeamMembers([]);
+        setSelectedMember(null);
+      } else if (isLeader) {
+        const myTeamsResponse = await TeamService.getMyTeams();
+        // @ts-ignore
+        const members = myTeamsResponse.content || [];
+        setTeamMembers(members);
+        setTeams([]); // Clear teams for LEADER
+        setSelectedMember(null);
+      } else {
+        setTeams([]);
+        setTeamMembers([]);
+        setSelectedMember(null);
+      }
     } catch (error) {
       console.error("Error loading teams:", error);
+      setTeams([]);
+      setTeamMembers([]);
     } finally {
       setLoading(false);
     }
@@ -85,6 +136,22 @@ const TeamManagement: React.FC = () => {
       setUsers(response.data?.response || []);
     } catch (error) {
       console.error("Error loading users:", error);
+    }
+  };
+
+  // ⭐ Load all team members customers (1 time only for LEADER)
+  const loadAllTeamMembersCustomers = async () => {
+    try {
+      const response = await TeamService.getTeamMembersCustomers(0, 1000);
+      // @ts-ignore
+      setAllTeamMembersCustomers(response.content?.response || []);
+      console.log(
+        "📡 Loaded all team members customers:",
+        response.content?.response?.length
+      );
+    } catch (error) {
+      console.error("Error loading team members customers:", error);
+      setAllTeamMembersCustomers([]);
     }
   };
 
@@ -153,24 +220,46 @@ const TeamManagement: React.FC = () => {
         <TooltipTrigger asChild>
           <Button
             size="sm"
-            variant="destructive"
+            variant="outline"
             className="h-8 w-8 p-0"
             onClick={() => {
-              if (window.confirm("Bạn có chắc chắn muốn xóa đội này?")) {
-                handleDeleteTeam(team.id);
-              }
+              window.location.href = `/teams/${team.id}/dashboard`;
             }}
           >
-            <Trash2 className="h-4 w-4" />
+            <BarChart3 className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Xóa</TooltipContent>
+        <TooltipContent>Xem tổng quan</TooltipContent>
       </Tooltip>
+      {/* ⭐ Only ADMIN can delete teams */}
+      {isAdmin && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                if (window.confirm("Bạn có chắc chắn muốn xóa đội này?")) {
+                  handleDeleteTeam(team.id);
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Xóa</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 
   // Handlers
   const handleCreateTeam = async (teamData: any) => {
+    if (!isAdmin) {
+      console.warn("❌ Only ADMIN can create teams");
+      return;
+    }
     try {
       await TeamService.create(teamData);
       await loadTeams();
@@ -181,6 +270,10 @@ const TeamManagement: React.FC = () => {
   };
 
   const handleEditTeam = async (teamData: any) => {
+    if (!isAdmin) {
+      console.warn("❌ Only ADMIN can edit teams");
+      return;
+    }
     try {
       if (selectedTeam) {
         await TeamService.update(selectedTeam.id, teamData);
@@ -194,6 +287,10 @@ const TeamManagement: React.FC = () => {
   };
 
   const handleDeleteTeam = async (teamId: string) => {
+    if (!isAdmin) {
+      console.warn("❌ Only ADMIN can delete teams");
+      return;
+    }
     try {
       await TeamService.delete(teamId);
       await loadTeams();
@@ -211,91 +308,159 @@ const TeamManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
+      {/* Breadcrumb */}
+      <Breadcrumb />
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý đội nhóm</h1>
-          <p className="text-gray-600">
-            Quản lý thông tin và thành viên các đội nhóm
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            {isAdmin ? "Quản lý đội nhóm" : "Đội nhóm của tôi"}
+          </h1>
+          <p className="text-sm md:text-base text-gray-600">
+            {isAdmin
+              ? "Quản lý thông tin và thành viên các đội nhóm"
+              : "Xem thông tin đội nhóm của bạn"}
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Tạo đội mới
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="w-full sm:w-auto"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Tạo đội mới
+          </Button>
+        )}
       </div>
 
-      {/* Stats Cards */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Tổng số đội</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {teams.length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <UserCheck className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Trưởng nhóm</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {teams.length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Thành viên</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div> */}
-
-      {/* Filter */}
-      <Filter
-        config={filterConfig}
-        onReset={handleResetFilters}
-        onRefresh={handleRefresh}
-        loading={loading}
-      />
-
-      {/* Data Table */}
-      <Card>
-        <CardContent className="p-0">
-          <DataTable
-            columns={columns}
-            data={filteredTeams}
-            actions={actions}
-            emptyMessage="Không tìm thấy đội nào"
+      {isAdmin && (
+        <>
+          {/* Filter */}
+          <Filter
+            config={filterConfig}
+            onReset={handleResetFilters}
+            onRefresh={handleRefresh}
+            loading={loading}
           />
-        </CardContent>
-      </Card>
+
+          {/* Data Table */}
+          <Card>
+            <CardContent className="">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <DataTable
+                  columns={columns}
+                  data={filteredTeams}
+                  actions={actions}
+                  emptyMessage="Không tìm thấy đội nào"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {isLeader && (
+        <>
+          {/* Dashboard Button for Leader */}
+          {teamMembers.length > 0 && (
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  const teamId = teamMembers[0]?.teamId;
+                  if (teamId) {
+                    navigate(`/teams/${teamId}/dashboard`);
+                  }
+                }}
+                className="gap-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Xem tổng quan nhóm
+              </Button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column: Team Members List */}
+            <div className="lg:col-span-1">
+              <Card className="h-full">
+                <CardContent className="p-0">
+                  <div className="border-b border-gray-200 px-6 py-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Thành viên đội
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {teamMembers.length} thành viên
+                    </p>
+                  </div>
+                  <div className="overflow-y-auto max-h-[600px]">
+                    {loading ? (
+                      <div className="p-6 text-center text-gray-500">
+                        Đang tải...
+                      </div>
+                    ) : teamMembers.length === 0 ? (
+                      <div className="p-6 text-center text-gray-500">
+                        Không có thành viên
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-100">
+                        {teamMembers.map((member) => (
+                          <div
+                            key={member.id}
+                            onClick={() => setSelectedMember(member)}
+                            className={`p-4 cursor-pointer transition-colors ${
+                              selectedMember?.id === member.id
+                                ? "bg-blue-50 border-l-4 border-blue-600"
+                                : "hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 truncate">
+                                  {member.fullName}
+                                </p>
+                                <p className="text-sm text-gray-600 truncate">
+                                  {member.email}
+                                </p>
+                                {member.leader && (
+                                  <Badge className="mt-2 bg-green-100 text-green-800 hover:bg-green-100">
+                                    Trưởng nhóm
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column: Team Member Customers */}
+            <div className="lg:col-span-2">
+              {selectedMember ? (
+                <TeamMemberCustomersTab
+                  selectedMember={selectedMember}
+                  allCustomers={allTeamMembersCustomers}
+                />
+              ) : (
+                <Card className="h-full">
+                  <CardContent className="flex items-center justify-center h-[600px]">
+                    <div className="text-center">
+                      <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 font-medium">
+                        Chọn một thành viên để xem khách hàng
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Modals */}
       <TeamCreateModal

@@ -664,21 +664,77 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                   >
                     Vai trò <span className="text-red-500">*</span>
                   </Label>
-                  <Select
-                    value={watch("roleIds")[0] || ""}
-                    onValueChange={(value) => setValue("roleIds", [value])}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Chọn vai trò" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    {/* Display selected roles as tags */}
+                    {watch("roleIds") && watch("roleIds").length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border">
+                        {watch("roleIds").map((roleId) => {
+                          const role = roles.find((r) => r.id === roleId);
+                          return role ? (
+                            <span
+                              key={roleId}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200"
+                            >
+                              {role.name}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const currentIds = watch("roleIds") || [];
+                                  setValue(
+                                    "roleIds",
+                                    currentIds.filter((id) => id !== roleId)
+                                  );
+                                }}
+                                className="ml-2 text-purple-600 hover:text-purple-800 hover:bg-purple-200 rounded-full p-0.5"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        const currentIds = watch("roleIds") || [];
+                        if (currentIds.includes(value)) {
+                          // Remove if already selected
+                          setValue(
+                            "roleIds",
+                            currentIds.filter((id) => id !== value)
+                          );
+                        } else {
+                          // Add if not selected
+                          setValue("roleIds", [...currentIds, value]);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Chọn vai trò" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles.map((role) => {
+                          const isSelected = watch("roleIds")?.includes(
+                            role.id
+                          );
+                          return (
+                            <SelectItem
+                              key={role.id}
+                              value={role.id}
+                              className={isSelected ? "bg-purple-50" : ""}
+                            >
+                              <div className="flex items-center">
+                                {isSelected && <span className="mr-2">✓</span>}
+                                {role.name}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {errors.roleIds && (
                     <p className="text-sm text-red-500 mt-1">
                       {errors.roleIds.message}

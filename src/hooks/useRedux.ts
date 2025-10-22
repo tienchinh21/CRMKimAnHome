@@ -1,4 +1,4 @@
-import { useAppDispatch, useAppSelector } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 
 // Re-export typed hooks for convenience
 export { useAppDispatch, useAppSelector };

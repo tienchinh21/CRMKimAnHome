@@ -18,8 +18,12 @@ import {
   Menu,
   Check,
   DollarSign,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePermission } from "@/hooks/usePermission";
+import type { Permission } from "@/lib/rbac/types";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -32,6 +36,7 @@ interface NavigationItem {
   name: string;
   href?: string;
   icon: any;
+  permission?: Permission;
   children?: NavigationItem[];
 }
 
@@ -44,49 +49,57 @@ const navigationItems: NavigationItem[] = [
   {
     name: "Quản lý Dự án",
     icon: Building2,
+    permission: PERMISSIONS.PROJECT_READ,
     children: [
       {
         name: "Danh sách Dự án",
         href: ROUTES.PROJECTS,
         icon: Building2,
+        permission: PERMISSIONS.PROJECT_READ,
       },
       {
         name: "Quản lý Căn hộ",
         href: ROUTES.APARTMENTS,
         icon: KeyRound,
+        permission: PERMISSIONS.APARTMENT_READ,
       },
     ],
   },
   {
     name: "Quản lý Khách hàng",
-
     icon: Users,
+    permission: PERMISSIONS.CUSTOMER_READ,
     children: [
       {
         name: "Quản lý Khách hàng",
         href: ROUTES.CUSTOMERS,
         icon: Users,
+        permission: PERMISSIONS.CUSTOMER_READ,
       },
       {
         name: "Quản lý giao dịch",
         href: ROUTES.DEALS,
         icon: DollarSign,
+        permission: PERMISSIONS.DEAL_READ,
       },
     ],
   },
   {
     name: "Quản lý Nội dung",
     icon: FileText,
+    permission: PERMISSIONS.BLOG_READ,
     children: [
       {
         name: "Quản lý Danh mục",
         href: ROUTES.BLOG_CATEGORIES,
         icon: FolderOpen,
+        permission: PERMISSIONS.BLOG_READ,
       },
       {
         name: "Quản lý Bài viết",
         href: ROUTES.BLOG,
         icon: Edit3,
+        permission: PERMISSIONS.BLOG_READ,
       },
     ],
   },
@@ -98,11 +111,25 @@ const navigationItems: NavigationItem[] = [
         name: "Quản lý Nhân viên",
         icon: User,
         href: "/users",
+        permission: PERMISSIONS.USER_MANAGE,
       },
       {
         name: "Quản lý Đội nhóm",
         icon: Users,
         href: "/teams",
+        permission: PERMISSIONS.TEAM_MANAGE,
+      },
+      {
+        name: "Quản lý Lương",
+        icon: DollarSign,
+        href: "/payrolls",
+        permission: PERMISSIONS.PAYROLL_READ,
+      },
+      {
+        name: "Quản lý Lương Thưởng",
+        icon: Star,
+        href: "/bonuses",
+        permission: PERMISSIONS.USER_MANAGE,
       },
     ],
   },
@@ -110,6 +137,7 @@ const navigationItems: NavigationItem[] = [
     name: "Cấu hình Hệ thống",
     icon: Settings,
     href: "/system-config",
+    permission: PERMISSIONS.SYSTEM_CONFIG,
   },
 ];
 
@@ -121,6 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { can } = usePermission();
 
   const isActivePath = (path: string) => {
     return location.pathname === path;
@@ -201,6 +230,26 @@ const Sidebar: React.FC<SidebarProps> = ({
                 ? isActivePath(item.href)
                 : isParentActive(item);
               const isExpanded = expandedItems.includes(item.name);
+
+              // ⭐ Kiểm tra quyền - nếu không có quyền thì không hiển thị
+              if (item.permission) {
+                const hasAccess = can(item.permission);
+                if (!hasAccess) {
+                  return null;
+                }
+              }
+
+              // ⭐ Nếu là parent menu (có children), check xem có child nào có quyền không
+              if (item.children && item.children.length > 0) {
+                const hasAccessibleChild = item.children.some((child) => {
+                  if (!child.permission) return true; // Nếu child không có permission thì hiển thị
+                  return can(child.permission);
+                });
+
+                if (!hasAccessibleChild) {
+                  return null; // Ẩn parent nếu không có child nào có quyền
+                }
+              }
 
               return (
                 <li key={item.name}>
@@ -292,6 +341,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                             const isChildActive = child.href
                               ? isActivePath(child.href)
                               : false;
+
+                            // ⭐ Kiểm tra quyền child item
+                            if (child.permission) {
+                              const hasAccess = can(child.permission);
+
+                              if (!hasAccess) {
+                                return null;
+                              }
+                            }
 
                             return (
                               <li key={child.href}>

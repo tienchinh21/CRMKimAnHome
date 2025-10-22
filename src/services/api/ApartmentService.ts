@@ -1,4 +1,5 @@
-import axios from "axios";
+import axiosClient from "@/utils/axiosClient";
+import { extractData, createFormDataWithJson } from "@/utils/apiHelpers";
 import type {
   CreateApartmentDto,
   UpdateApartmentDto,
@@ -8,15 +9,6 @@ import type {
 } from "@/types/apartment";
 
 import type { RestResponse, Pageable } from "@/types/common";
-
-// Helper function to extract data from API response
-const extractData = (response: any) => {
-  // Nếu content là null hoặc undefined, trả về data gốc
-  if (response.data.content === null || response.data.content === undefined) {
-    return response.data;
-  }
-  return response.data.content || response.data;
-};
 
 export interface CreateApartmentPayload {
   data: CreateApartmentDto;
@@ -58,16 +50,16 @@ const ApartmentService = {
       queryParams.append("filter", params.filter);
     }
 
-    const response = await axios.get(
-      `https://kimanhome.duckdns.org/spring-api/apartments?${queryParams.toString()}`
+    const response = await axiosClient.get(
+      `/apartments?${queryParams.toString()}`
     );
     return { ...response, data: extractData(response) };
   },
 
   // Get apartment by ID
   async getById(id: string): Promise<RestResponse<ReponseDetailApartmentDto>> {
-    const response = await axios.get(
-      `https://kimanhome.duckdns.org/spring-api/apartments/id/${id}`
+    const response = await axiosClient.get(
+      `/apartments/id/${id}`
     );
     return response.data;
   },
@@ -76,8 +68,8 @@ const ApartmentService = {
   async getBySlug(
     slug: string
   ): Promise<RestResponse<ReponseDetailApartmentDto>> {
-    const response = await axios.get(
-      `https://kimanhome.duckdns.org/spring-api/apartments/slug/${slug}`
+    const response = await axiosClient.get(
+      `/apartments/slug/${slug}`
     );
     return { ...response, data: extractData(response) };
   },
@@ -86,23 +78,10 @@ const ApartmentService = {
   async create(
     payload: CreateApartmentPayload
   ): Promise<RestResponse<ReponseApartmentDto>> {
-    const formData = new FormData();
+    const formData = createFormDataWithJson(payload.data, payload.file);
 
-    // Add apartment data as Blob with application/json type
-    const dataBlob = new Blob([JSON.stringify(payload.data)], {
-      type: "application/json",
-    });
-    formData.append("data", dataBlob);
-
-    // Add files
-    if (payload.file && payload.file.length > 0) {
-      payload.file.forEach((file) => {
-        formData.append(`file`, file);
-      });
-    }
-
-    const response = await axios.post(
-      "https://kimanhome.duckdns.org/spring-api/apartments",
+    const response = await axiosClient.post(
+      "/apartments",
       formData
     );
 
@@ -114,23 +93,10 @@ const ApartmentService = {
     id: string,
     payload: UpdateApartmentPayload
   ): Promise<RestResponse<void>> {
-    const formData = new FormData();
+    const formData = createFormDataWithJson(payload.data, payload.files);
 
-    // Add apartment data as Blob with application/json type
-    const dataBlob = new Blob([JSON.stringify(payload.data)], {
-      type: "application/json",
-    });
-    formData.append("data", dataBlob);
-
-    // Add files if provided
-    if (payload.files && payload.files.length > 0) {
-      payload.files.forEach((file) => {
-        formData.append(`files`, file);
-      });
-    }
-
-    const response = await axios.put(
-      `https://kimanhome.duckdns.org/spring-api/apartments/${id}`,
+    const response = await axiosClient.put(
+      `/apartments/${id}`,
       formData
     );
 
@@ -139,8 +105,8 @@ const ApartmentService = {
 
   // Delete apartment
   async delete(id: string): Promise<RestResponse<void>> {
-    const response = await axios.delete(
-      `https://kimanhome.duckdns.org/spring-api/apartments/${id}`
+    const response = await axiosClient.delete(
+      `/apartments/${id}`
     );
     return { ...response, data: extractData(response) };
   },
@@ -178,8 +144,8 @@ const ApartmentService = {
 
   // Legal Management APIs
   async getLegals(apartmentId: string) {
-    const response = await axios.get(
-      `https://kimanhome.duckdns.org/spring-api/legals?apartmentId=${apartmentId}`
+    const response = await axiosClient.get(
+      `/legals?apartmentId=${apartmentId}`
     );
     return { ...response, data: extractData(response) };
   },
@@ -188,8 +154,8 @@ const ApartmentService = {
     apartmentId: string,
     legalData: { name: string; sortOrder?: number }
   ) {
-    const response = await axios.post(
-      "https://kimanhome.duckdns.org/spring-api/legals",
+    const response = await axiosClient.post(
+      "/legals",
       {
         ...legalData,
         apartmentId,
@@ -203,8 +169,8 @@ const ApartmentService = {
     legalId: string,
     legalData: { name: string; sortOrder?: number }
   ) {
-    const response = await axios.put(
-      `https://kimanhome.duckdns.org/spring-api/legals/${legalId}`,
+    const response = await axiosClient.put(
+      `/legals/${legalId}`,
       {
         ...legalData,
         sortOrder: legalData.sortOrder || 0,
@@ -214,8 +180,8 @@ const ApartmentService = {
   },
 
   async deleteLegal(legalId: string) {
-    const response = await axios.delete(
-      `https://kimanhome.duckdns.org/spring-api/legals/${legalId}`
+    const response = await axiosClient.delete(
+      `/legals/${legalId}`
     );
     return { ...response, data: extractData(response) };
   },

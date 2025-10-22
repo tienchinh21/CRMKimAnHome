@@ -12,6 +12,7 @@ export * from "./blog";
 export * from "./common";
 export * from "./legal";
 export * from "./team";
+export * from "./dashboard";
 
 // Re-export commonly used types
 export type { User, CreateUserDto, UpdateUserDto, UserWithRoles } from "./user";
@@ -37,6 +38,15 @@ export type {
   GroupLeadershipValidation,
 } from "./relationships";
 export type { Role, RoleResponse, CreateRoleDto, UpdateRoleDto } from "./role";
+export type {
+  Team,
+  TeamResponse,
+  TeamDetailResponse,
+  TeamMember,
+  MyTeamsResponse,
+  TeamMemberCustomer,
+  TeamMembersCustomersResponse,
+} from "./team";
 
 // Re-export business logic types
 export type {

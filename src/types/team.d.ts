@@ -30,6 +30,51 @@ export interface TeamDetailResponse {
   members: UserResponse[];
 }
 
+// ⭐ Team Members (My Teams) - API: /teams/my-teams
+export interface TeamMember {
+  id: string;
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  avatarUrl?: string;
+  teamName: string;
+  teamId: string;
+  leader: boolean;
+}
+
+export interface MyTeamsResponse {
+  error: null | string;
+  content: TeamMember[];
+}
+
+// ⭐ Team Members Customers - API: /customers/team-members
+export interface TeamMemberCustomer {
+  id: string;
+  fullName: string;
+  sourcesName: string;
+  demandName: string;
+  projectId: string;
+  projectName: string;
+  note: string;
+  pipelineName: string;
+  userAssigneeName: string;
+  isDeal: boolean | null;
+  upcomingAppointments: any[];
+}
+
+export interface TeamMembersCustomersResponse {
+  error: null | string;
+  content: {
+    info: {
+      page: number;
+      size: number;
+      pages: number;
+      total: number;
+    };
+    response: TeamMemberCustomer[];
+  };
+}
+
 // User types based on API
 export interface UserResponse {
   id: string;

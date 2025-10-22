@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = "https://kimanhome.duckdns.org/spring-api";
+import axiosClient from "@/utils/axiosClient";
 
 export interface UpcomingAppointment {
   id: number;
@@ -80,14 +78,8 @@ const CustomerService = {
         queryParams.append("filter", params.filter);
       }
 
-      const response = await axios.get(
-        `${API_BASE_URL}/customers?${queryParams.toString()}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
+      const response = await axiosClient.get(
+        `/customers?${queryParams.toString()}`
       );
       return response.data;
     } catch (error) {
@@ -99,12 +91,7 @@ const CustomerService = {
   // Get customer by ID
   async getById(id: string): Promise<CustomerResponse> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/customers/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      const response = await axiosClient.get(`/customers/${id}`);
       return response.data;
     } catch (error) {
       console.error("Get customer by ID error:", error);
@@ -115,12 +102,7 @@ const CustomerService = {
   // Create new customer
   async create(customer: CreateCustomerRequest): Promise<CustomerResponse> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/customers`, customer, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      const response = await axiosClient.post(`/customers`, customer);
       return response.data;
     } catch (error) {
       console.error("Create customer error:", error);
@@ -131,15 +113,9 @@ const CustomerService = {
   // Update customer
   async update(customer: UpdateCustomerRequest): Promise<CustomerResponse> {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/customers/${customer.id}`,
-        customer,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
+      const response = await axiosClient.put(
+        `/customers/${customer.id}`,
+        customer
       );
       return response.data;
     } catch (error) {
@@ -151,12 +127,7 @@ const CustomerService = {
   // Delete customer
   async delete(id: string): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/customers/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      });
+      await axiosClient.delete(`/customers/${id}`);
     } catch (error) {
       console.error("Delete customer error:", error);
       throw error;
@@ -166,15 +137,8 @@ const CustomerService = {
   // Search customers
   async search(searchTerm: string): Promise<CustomerListResponse> {
     try {
-      const response = await axios.get(
-        // ✅ FIXED: Use ~ (like) with wildcard * instead of ~~, and lowercase 'or' instead of 'OR'
-        `${API_BASE_URL}/customers?filter=fullName ~ '*${searchTerm}*' or phoneNumber ~ '*${searchTerm}*'`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
+      const response = await axiosClient.get(
+        `/customers?filter=fullName ~ '*${searchTerm}*' or phoneNumber ~ '*${searchTerm}*'`
       );
       return response.data;
     } catch (error) {

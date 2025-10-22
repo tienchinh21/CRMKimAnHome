@@ -1,14 +1,5 @@
 import axiosClient from "@/utils/axiosClient";
-import axios from "axios";
-
-// Helper function to extract data from API response
-const extractData = (response: any) => {
-  // Nếu content là null hoặc undefined, trả về data gốc
-  if (response.data.content === null || response.data.content === undefined) {
-    return response.data;
-  }
-  return response.data.content || response.data;
-};
+import { extractData, createFormDataWithJson } from "@/utils/apiHelpers";
 
 export interface CreateProjectPayload {
   name: string;
@@ -53,25 +44,9 @@ const ProjectService = {
 
   // Create new project with images (API mới)
   async createProjectWithImages(data: CreateProjectPayload, files?: File[]) {
-    const formData = new FormData();
+    const formData = createFormDataWithJson(data, files);
 
-    // Thêm data object với Content-Type application/json
-    const dataBlob = new Blob([JSON.stringify(data)], {
-      type: "application/json",
-    });
-    formData.append("data", dataBlob);
-
-    // Thêm files array - mỗi file là một field riêng biệt
-    if (files && files.length > 0) {
-      files.forEach((file) => {
-        formData.append("file", file);
-      });
-    }
-
-    const response = await axios.post(
-      "https://kimanhome.duckdns.org/spring-api/projects",
-      formData
-    );
+    const response = await axiosClient.post("/projects", formData);
     return { ...response, data: extractData(response) };
   },
 
@@ -81,25 +56,9 @@ const ProjectService = {
     data: UpdateProjectPayload,
     files?: File[]
   ) {
-    const formData = new FormData();
+    const formData = createFormDataWithJson(data, files);
 
-    // Thêm data object với Content-Type application/json
-    const dataBlob = new Blob([JSON.stringify(data)], {
-      type: "application/json",
-    });
-    formData.append("data", dataBlob);
-
-    // Thêm files array
-    if (files && files.length > 0) {
-      files.forEach((file) => {
-        formData.append("file", file);
-      });
-    }
-
-    const response = await axios.put(
-      `https://kimanhome.duckdns.org/spring-api/projects/${id}`,
-      formData
-    );
+    const response = await axiosClient.put(`/projects/${id}`, formData);
     return { ...response, data: extractData(response) };
   },
 

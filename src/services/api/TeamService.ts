@@ -1,80 +1,82 @@
-import axios from "axios";
+import axiosClient from "@/utils/axiosClient";
 import type {
   TeamResponse,
   TeamDetailResponse,
   CreateTeamDto,
   UpdateTeamDto,
+  MyTeamsResponse,
+  TeamMembersCustomersResponse,
 } from "@/types";
 
 const TeamService = {
-  // Get all teams
   async getAll(): Promise<{ data: TeamResponse[] }> {
-    const response = await axios.get(
-      "https://kimanhome.duckdns.org/spring-api/teams"
-    );
+    const response = await axiosClient.get("/teams");
     return { data: response.data };
   },
 
-  // Get team by ID
   async getById(id: string): Promise<{ data: TeamDetailResponse }> {
-    const response = await axios.get(
-      `https://kimanhome.duckdns.org/spring-api/teams/${id}`
-    );
+    const response = await axiosClient.get(`/teams/${id}`);
     return { data: response.data };
   },
 
-  // Create new team
   async create(teamData: CreateTeamDto): Promise<{ data: TeamResponse }> {
-    const response = await axios.post(
-      "https://kimanhome.duckdns.org/spring-api/teams",
-      teamData
-    );
+    const response = await axiosClient.post("/teams", teamData);
     return { data: response.data };
   },
 
-  // Update team
   async update(
     id: string,
     teamData: UpdateTeamDto
   ): Promise<{ data: TeamResponse }> {
-    const response = await axios.put(
-      `https://kimanhome.duckdns.org/spring-api/teams/${id}`,
-      teamData
-    );
+    const response = await axiosClient.put(`/teams/${id}`, teamData);
     return { data: response.data };
   },
 
-  // Delete team
   async delete(id: string): Promise<void> {
-    await axios.delete(`https://kimanhome.duckdns.org/spring-api/teams/${id}`);
+    await axiosClient.delete(`/teams/${id}`);
   },
 
-  // Add member to team
   async addMember(teamId: string, memberIds: string[]): Promise<void> {
-    await axios.post(
-      `https://kimanhome.duckdns.org/spring-api/teams/${teamId}/members`,
-      memberIds
-    );
+    await axiosClient.post(`/teams/${teamId}/members`, memberIds);
   },
 
-  // Remove member from team
   async removeMember(teamId: string, memberId: string): Promise<void> {
-    await axios.delete(
-      `https://kimanhome.duckdns.org/spring-api/teams/${teamId}/members/${memberId}`
-    );
+    await axiosClient.delete(`/teams/${teamId}/members/${memberId}`);
   },
 
-  // Update team leader
   async updateLeader(
     teamId: string,
     leaderId: string,
     name: string
   ): Promise<{ data: TeamResponse }> {
-    const response = await axios.put(
-      `https://kimanhome.duckdns.org/spring-api/teams/${teamId}`,
-      { leaderId, name }
-    );
+    const response = await axiosClient.put(`/teams/${teamId}`, {
+      leaderId,
+      name,
+    });
     return { data: response.data };
+  },
+
+  // ⭐ Get my teams (for Leader role)
+  async getMyTeams(): Promise<MyTeamsResponse> {
+    const response = await axiosClient.get("/teams/my-teams");
+    return response.data;
+  },
+
+  // Get customers of team members
+  async getTeamMembersCustomers(
+    page: number = 1,
+    size: number = 10
+  ): Promise<TeamMembersCustomersResponse> {
+    const response = await axiosClient.get("/customers/team-members", {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  //  Get team dashboard
+  async getTeamDashboard(teamId: string): Promise<any> {
+    const response = await axiosClient.get(`/teams/${teamId}/dashboard`);
+    return response;
   },
 };
 
