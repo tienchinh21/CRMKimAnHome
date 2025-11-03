@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import LocationService from "@/services/api/LocationService";
 import ProjectService from "@/services/api/ProjectService";
 import type {
@@ -67,7 +68,7 @@ export const useProjectCreation = () => {
       const extractedCoords =
         LocationService.extractCoordinatesFromUrl(googleMapsUrl);
       if (!extractedCoords) {
-        alert(
+        toast.error(
           "Không thể trích xuất tọa độ từ URL Google Maps. Vui lòng kiểm tra lại URL."
         );
         return;
@@ -117,7 +118,7 @@ export const useProjectCreation = () => {
       return projectId;
     } catch (error) {
       console.error("❌ Error creating project:", error);
-      alert(
+      toast.error(
         `Có lỗi xảy ra khi tạo dự án: ${(error as any)?.message || "Unknown"}`
       );
       throw error;
@@ -209,7 +210,7 @@ export const useProjectCreation = () => {
         `📝 Chi tiết: ${results.details} mục\n` +
         `🏢 Tiện ích: ${results.amenities} mục`;
 
-      alert(successMessage);
+      toast.success(successMessage);
 
       // Warning if using temporary project ID
       if (createdProjectId && createdProjectId.startsWith("temp_")) {
@@ -225,7 +226,7 @@ export const useProjectCreation = () => {
     } catch (error) {
       console.error("❌ Error saving project details:", error);
       setSavingProgress(null);
-      alert(
+      toast.error(
         `Có lỗi xảy ra khi lưu chi tiết dự án: ${
           (error as any)?.message || "Unknown"
         }`

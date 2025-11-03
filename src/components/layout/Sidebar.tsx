@@ -68,7 +68,6 @@ const navigationItems: NavigationItem[] = [
   {
     name: "Quản lý Khách hàng",
     icon: Users,
-    permission: PERMISSIONS.CUSTOMER_READ,
     children: [
       {
         name: "Quản lý Khách hàng",

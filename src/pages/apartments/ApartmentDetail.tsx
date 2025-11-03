@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   Home,
   MapPin,
@@ -278,10 +279,10 @@ const ApartmentDetail: React.FC = () => {
       await loadApartmentDetail();
       setIsEditing(false);
 
-      alert("Cập nhật căn hộ thành công!");
+      toast.success("Cập nhật căn hộ thành công!");
     } catch (error) {
       console.error("Error updating apartment:", error);
-      alert(
+      toast.error(
         `Có lỗi xảy ra khi cập nhật căn hộ: ${
           (error as any)?.response?.data?.message ||
           (error as any)?.message ||

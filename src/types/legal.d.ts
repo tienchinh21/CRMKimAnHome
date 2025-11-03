@@ -1,4 +1,3 @@
-// Legal entity types
 export interface Legal {
   id: string;
   name: string;

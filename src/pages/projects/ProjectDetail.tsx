@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Save, X } from "lucide-react";
 import type { Project } from "@/types";
@@ -449,13 +450,13 @@ const ProjectDetail: React.FC = () => {
       }
 
       // Show success message
-      alert("Cập nhật dự án thành công!");
+      toast.success("Cập nhật dự án thành công!");
 
       // Reload project data to get updated info
       await loadProjectData(id);
     } catch (error) {
       console.error("Error saving project details:", error);
-      alert(
+      toast.error(
         `Có lỗi xảy ra khi cập nhật dự án: ${
           (error as any)?.response?.data?.message ||
           (error as any)?.message ||

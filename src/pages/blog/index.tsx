@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, FileText, Calendar } from "lucide-react";
@@ -126,7 +127,7 @@ const BlogList: React.FC = () => {
         console.log("✅ Blog deleted successfully");
       } catch (error) {
         console.error("❌ Error deleting blog:", error);
-        alert("Có lỗi xảy ra khi xóa bài viết");
+        toast.error("Có lỗi xảy ra khi xóa bài viết");
       }
     }
   };

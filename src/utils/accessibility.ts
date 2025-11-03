@@ -1,14 +1,3 @@
-/**
- * Accessibility Utilities
- * Helper functions for WCAG AA compliance
- */
-
-/**
- * Check if color contrast meets WCAG AA standards
- * @param foreground - Foreground color in hex
- * @param background - Background color in hex
- * @returns Contrast ratio
- */
 export function getContrastRatio(foreground: string, background: string): number {
   const fgLum = getRelativeLuminance(foreground);
   const bgLum = getRelativeLuminance(background);
@@ -19,11 +8,6 @@ export function getContrastRatio(foreground: string, background: string): number
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/**
- * Calculate relative luminance of a color
- * @param hex - Color in hex format
- * @returns Relative luminance value
- */
 function getRelativeLuminance(hex: string): number {
   const rgb = hexToRgb(hex);
   if (!rgb) return 0;
@@ -36,11 +20,7 @@ function getRelativeLuminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-/**
- * Convert hex color to RGB
- * @param hex - Color in hex format
- * @returns RGB array or null
- */
+
 function hexToRgb(hex: string): [number, number, number] | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
@@ -48,33 +28,18 @@ function hexToRgb(hex: string): [number, number, number] | null {
     : null;
 }
 
-/**
- * Check if contrast ratio meets WCAG AA standards
- * @param ratio - Contrast ratio
- * @param level - 'AA' or 'AAA'
- * @returns true if meets standard
- */
+
 export function meetsWCAGStandard(ratio: number, level: 'AA' | 'AAA' = 'AA'): boolean {
   const minRatio = level === 'AA' ? 4.5 : 7;
   return ratio >= minRatio;
 }
 
-/**
- * Generate accessible label for screen readers
- * @param value - The value to display
- * @param label - The label for the value
- * @returns Accessible label string
- */
+
 export function generateAriaLabel(value: string | number, label: string): string {
   return `${label}: ${value}`;
 }
 
-/**
- * Format number for accessibility
- * @param value - Number to format
- * @param options - Formatting options
- * @returns Formatted string
- */
+
 export function formatNumberAccessible(
   value: number,
   options?: {
@@ -92,12 +57,7 @@ export function formatNumberAccessible(
   }).format(value);
 }
 
-/**
- * Create accessible tooltip
- * @param content - Tooltip content
- * @param id - Unique ID for the tooltip
- * @returns Object with aria attributes
- */
+
 export function createAccessibleTooltip(content: string, id: string) {
   return {
     'aria-describedby': id,
@@ -105,12 +65,7 @@ export function createAccessibleTooltip(content: string, id: string) {
   };
 }
 
-/**
- * Create accessible button attributes
- * @param label - Button label
- * @param disabled - Is button disabled
- * @returns Object with aria attributes
- */
+
 export function createAccessibleButton(label: string, disabled = false) {
   return {
     'aria-label': label,
@@ -119,13 +74,6 @@ export function createAccessibleButton(label: string, disabled = false) {
   };
 }
 
-/**
- * Create accessible table header
- * @param label - Header label
- * @param sortable - Is column sortable
- * @param sorted - Sort direction ('asc', 'desc', or null)
- * @returns Object with aria attributes
- */
 export function createAccessibleTableHeader(
   label: string,
   sortable = false,
@@ -138,12 +86,6 @@ export function createAccessibleTableHeader(
   };
 }
 
-/**
- * Create accessible loading state
- * @param isLoading - Is loading
- * @param message - Loading message
- * @returns Object with aria attributes
- */
 export function createAccessibleLoadingState(isLoading: boolean, message = 'Loading') {
   return {
     'aria-busy': isLoading,
@@ -152,12 +94,6 @@ export function createAccessibleLoadingState(isLoading: boolean, message = 'Load
   };
 }
 
-/**
- * Create accessible error state
- * @param error - Error message
- * @param id - Unique ID for error
- * @returns Object with aria attributes
- */
 export function createAccessibleErrorState(error: string | null, id: string) {
   return {
     'aria-invalid': !!error,
@@ -166,10 +102,6 @@ export function createAccessibleErrorState(error: string | null, id: string) {
   };
 }
 
-/**
- * Skip to main content link
- * Used for keyboard navigation
- */
 export function createSkipToMainLink() {
   return {
     href: '#main-content',
@@ -178,18 +110,9 @@ export function createSkipToMainLink() {
   };
 }
 
-/**
- * Screen reader only class
- * Hides content visually but keeps it for screen readers
- */
 export const srOnlyClass = 'sr-only';
 
-/**
- * Create accessible chart
- * @param title - Chart title
- * @param description - Chart description
- * @returns Object with aria attributes
- */
+
 export function createAccessibleChart(title: string, description?: string) {
   return {
     role: 'img',
@@ -198,11 +121,6 @@ export function createAccessibleChart(title: string, description?: string) {
   };
 }
 
-/**
- * Announce message to screen readers
- * @param message - Message to announce
- * @param priority - 'polite' or 'assertive'
- */
 export function announceToScreenReader(message: string, priority: 'polite' | 'assertive' = 'polite') {
   const announcement = document.createElement('div');
   announcement.setAttribute('role', 'status');
@@ -218,26 +136,15 @@ export function announceToScreenReader(message: string, priority: 'polite' | 'as
   }, 1000);
 }
 
-/**
- * Check if user prefers reduced motion
- * @returns true if user prefers reduced motion
- */
 export function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-/**
- * Check if user prefers dark mode
- * @returns true if user prefers dark mode
- */
 export function prefersDarkMode(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
-/**
- * Check if user prefers high contrast
- * @returns true if user prefers high contrast
- */
+
 export function prefersHighContrast(): boolean {
   return window.matchMedia('(prefers-contrast: more)').matches;
 }

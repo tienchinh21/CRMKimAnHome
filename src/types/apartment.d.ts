@@ -1,26 +1,25 @@
 import type { Project } from "./project";
 
-// Apartment Management Types - Updated to match API spec
 export interface CreateApartmentPayload {
   data: {
     name: string;
     publicPrice: string;
     privatePrice: string;
     detailedDescription: string;
-    highlights: string; // Ngăn cách bởi \n
+    highlights: string; 
     area: string;
-    numberBedroom: string; // format: byte
-    numberBathroom: string; // format: byte
-    floor: string; // format: byte
+    numberBedroom: string; 
+    numberBathroom: string; 
+    floor: string; 
     direction: string;
     interior: string;
-    status: string; // format: byte
+    status: string; 
     projectId: string;
-    isSell: boolean; // true: bán, false: cho thuê
+    isSell: boolean; 
     alias: string;
-    isPublic: boolean; // true: công khai, false: riêng tư
+    isPublic: boolean; 
   };
-  file: string[]; // File upload paths (binary format)
+  file: string[]; 
 }
 
 export interface UpdateApartmentPayload {
@@ -42,23 +41,22 @@ export interface UpdateApartmentPayload {
     alias?: string;
     isPublic?: boolean;
   };
-  files?: string[]; // File upload paths
+  files?: string[]; 
 }
 
-// API Response DTOs matching Swagger spec
 export interface ReponseApartmentDto {
   id: string;
   name: string;
   publicPrice: string;
   privatePrice: string;
   area: string;
-  numberBedroom: string; // byte format
-  numberBathroom: string; // byte format
+  numberBedroom: string; 
+  numberBathroom: string; 
   mainImage: string;
   projectId: string;
   slug: string;
   isSell: boolean;
-  status: string; // byte format
+  status: string; 
   alias: string;
   isPublic: boolean;
   ownerName: string;
@@ -72,14 +70,13 @@ export interface ReponseDetailApartmentDto {
   publicPrice: string;
   privatePrice: string;
   detailedDescription: string;
-  //   highlights: string;
   area: string;
-  numberBedroom: string; // byte format
-  numberBathroom: string; // byte format
-  floor: string; // byte format
+  numberBedroom: string; 
+  numberBathroom: string; 
+  floor: string; 
   direction: string;
   interior: string;
-  status: string; // byte format
+  status: string; 
   isSell: boolean;
   projectId: string;
   mainImage: string;
@@ -100,14 +97,13 @@ export interface CreateApartmentDto {
   publicPrice: string;
   privatePrice: string;
   detailedDescription: string;
-  //   highlights: string;
   area: string;
-  numberBedroom: string; // byte format
-  numberBathroom: string; // byte format
-  floor: string; // byte format
+  numberBedroom: string; 
+  numberBathroom: string; 
+  floor: string; 
   direction: string;
   interior: string;
-  status: string; // byte format
+  status: string; 
   projectId: string;
   isSell: boolean;
   alias: string;
@@ -120,7 +116,6 @@ export interface UpdateApartmentDto {
   publicPrice?: string;
   privatePrice?: string;
   detailedDescription?: string;
-  //   highlights?: string;
   area?: string;
   numberBedroom?: string;
   numberBathroom?: string;
@@ -136,14 +131,12 @@ export interface UpdateApartmentDto {
   isPublic?: boolean;
 }
 
-// Legacy interface for backward compatibility
 export interface Apartment {
   id: string;
   name: string;
   publicPrice: string;
   privatePrice: string;
   detailedDescription: string;
-  //   highlights: string[];
   area: string;
   numberBedroom: string;
   numberBathroom: string;
@@ -157,7 +150,6 @@ export interface Apartment {
   files: string[];
   createdAt: string;
   updatedAt: string;
-  // Additional fields from API
   mainImage?: string;
   images?: string[];
   slug?: string;
@@ -166,8 +158,6 @@ export interface Apartment {
   project?: Project;
 }
 
-// Apartment Specification types for filtering
 export interface SpecificationApartment {
-  // Add filter properties as needed
   [key: string]: any;
 }

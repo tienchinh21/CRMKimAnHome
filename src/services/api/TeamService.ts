@@ -56,13 +56,11 @@ const TeamService = {
     return { data: response.data };
   },
 
-  // ⭐ Get my teams (for Leader role)
   async getMyTeams(): Promise<MyTeamsResponse> {
     const response = await axiosClient.get("/teams/my-teams");
     return response.data;
   },
 
-  // Get customers of team members
   async getTeamMembersCustomers(
     page: number = 1,
     size: number = 10
@@ -73,7 +71,6 @@ const TeamService = {
     return response.data;
   },
 
-  //  Get team dashboard
   async getTeamDashboard(teamId: string): Promise<any> {
     const response = await axiosClient.get(`/teams/${teamId}/dashboard`);
     return response;

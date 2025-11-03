@@ -1,4 +1,5 @@
 import React from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,7 +102,7 @@ const BlogCategoriesList: React.FC = () => {
         await fetchCategories();
       } catch (error) {
         console.error("Delete category failed", error);
-        alert("Xóa danh mục thất bại");
+        toast.error("Xóa danh mục thất bại");
       }
     }
   };
@@ -235,7 +236,7 @@ const BlogCategoriesList: React.FC = () => {
                     <Button
                       onClick={async () => {
                         if (!name.trim()) {
-                          return alert("Vui lòng nhập tên danh mục");
+                          return toast.error("Vui lòng nhập tên danh mục");
                         }
                         try {
                           setCreating(true);
@@ -249,10 +250,10 @@ const BlogCategoriesList: React.FC = () => {
                               editingCategory.id,
                               payload
                             );
-                            alert("Cập nhật danh mục thành công");
+                            toast.success("Cập nhật danh mục thành công");
                           } else {
                             await BlogService.createCategory(payload);
-                            alert("Tạo danh mục thành công");
+                            toast.success("Tạo danh mục thành công");
                           }
 
                           setOpen(false);
@@ -260,7 +261,7 @@ const BlogCategoriesList: React.FC = () => {
                           await fetchCategories();
                         } catch (e) {
                           console.error("Category operation failed", e);
-                          alert(
+                          toast.error(
                             editingCategory
                               ? "Cập nhật danh mục thất bại"
                               : "Tạo danh mục thất bại"

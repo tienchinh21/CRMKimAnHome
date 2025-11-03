@@ -39,19 +39,16 @@ export interface RestResponseSystemConfigDto {
 }
 
 class SystemConfigService {
-  // Lấy tất cả cấu hình hệ thống
   async getAll(): Promise<RestResponseListSystemConfigDto> {
     const response = await axiosClient.get("/system-configs");
     return response.data;
   }
 
-  // Lấy cấu hình theo ID
   async getById(id: string): Promise<RestResponseSystemConfigDto> {
     const response = await axiosClient.get(`/system-configs/${id}`);
     return response.data;
   }
 
-  // Tạo cấu hình mới
   async create(
     data: CreateSystemConfigDto
   ): Promise<RestResponseSystemConfigDto> {
@@ -59,7 +56,6 @@ class SystemConfigService {
     return response.data;
   }
 
-  // Cập nhật cấu hình
   async update(
     id: string,
     data: UpdateSystemConfigDto
@@ -68,13 +64,11 @@ class SystemConfigService {
     return response.data;
   }
 
-  // Xóa cấu hình
   async delete(id: string): Promise<void> {
     await axiosClient.delete(`/system-configs/${id}`);
   }
 
-  // Upload file cho cấu hình
-  async uploadFile(file: File, subPath: string): Promise<string> {
+    async uploadFile(file: File, subPath: string): Promise<string> {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -91,7 +85,6 @@ class SystemConfigService {
     return response.data;
   }
 
-  // Xóa file
   async deleteFile(url: string): Promise<void> {
     await axiosClient.delete(`/storage/delete?url=${encodeURIComponent(url)}`);
   }

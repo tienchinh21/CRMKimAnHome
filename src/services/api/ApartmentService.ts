@@ -5,19 +5,18 @@ import type {
   UpdateApartmentDto,
   ReponseApartmentDto,
   ReponseDetailApartmentDto,
-  SpecificationApartment,
 } from "@/types/apartment";
 
 import type { RestResponse, Pageable } from "@/types/common";
 
 export interface CreateApartmentPayload {
   data: CreateApartmentDto;
-  file: File[]; // Files for upload
+  file: File[];
 }
 
 export interface UpdateApartmentPayload {
   data: UpdateApartmentDto;
-  files?: File[]; // Files for upload (note: API uses 'files' not 'file')
+  files?: File[]; 
 }
 
 export interface ApartmentListParams {

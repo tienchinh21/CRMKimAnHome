@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -254,7 +255,8 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
       // 1. Update user
       const userResponse = await UserService.update(user.id, userPayload);
       const updatedUser = userResponse.data;
-      console.log("User updated successfully:", updatedUser);
+
+      toast.success("Cập nhật người dùng thành công!");
 
       // 2. Update team leader if ledGroupId is provided
       if (data.ledGroupId) {
@@ -334,7 +336,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
       onSuccess(updatedUser);
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("Có lỗi xảy ra khi cập nhật người dùng");
+      toast.error("Có lỗi xảy ra khi cập nhật người dùng");
     } finally {
       setSubmitting(false);
       isSubmittingRef.current = false;

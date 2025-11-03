@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,7 +72,7 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({
       onSuccess(data);
     } catch (error) {
       console.error("Error updating team:", error);
-      alert("Có lỗi xảy ra khi cập nhật đội");
+      toast.error("Có lỗi xảy ra khi cập nhật đội");
     } finally {
       setSubmitting(false);
     }

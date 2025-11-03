@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import LocationService from "@/services/api/LocationService";
 
 interface LocationOption {
@@ -40,7 +41,9 @@ export const useLocationManagement = () => {
         }
       } catch (error) {
         console.error("Error loading provinces:", error);
-        alert("Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại.");
+        toast.error(
+          "Không thể tải danh sách tỉnh/thành phố. Vui lòng thử lại."
+        );
       } finally {
         setLoadingProvinces(false);
       }
@@ -75,7 +78,7 @@ export const useLocationManagement = () => {
           setWards([]);
         } catch (error) {
           console.error("Error loading districts:", error);
-          alert("Không thể tải danh sách quận/huyện. Vui lòng thử lại.");
+          toast.error("Không thể tải danh sách quận/huyện. Vui lòng thử lại.");
         } finally {
           setLoadingDistricts(false);
         }
@@ -109,7 +112,7 @@ export const useLocationManagement = () => {
           setSelectedWard("");
         } catch (error) {
           console.error("Error loading wards:", error);
-          alert("Không thể tải danh sách phường/xã. Vui lòng thử lại.");
+          toast.error("Không thể tải danh sách phường/xã. Vui lòng thử lại.");
         } finally {
           setLoadingWards(false);
         }

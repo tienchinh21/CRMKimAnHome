@@ -29,8 +29,7 @@ import PayrollManagement from "@/pages/payrolls";
 import BonusManagement from "@/pages/bonuses";
 import NotFound from "@/pages/NotFound";
 import PublicRoute from "./components/auth/PublicRoute";
-import { RoleDebugger } from "@/components/debug/RoleDebugger";
-
+import RoleDebugger from "@/components/debug/RoleDebugger";
 function App() {
   return (
     <Provider store={store}>
@@ -95,7 +94,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster position="top-right" richColors />
-          {/* <RoleDebugger /> */}
+          <RoleDebugger />
         </Router>
       </AuthProvider>
     </Provider>

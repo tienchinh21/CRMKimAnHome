@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -98,7 +99,7 @@ const TeamDetailModal: React.FC<TeamDetailModalProps> = ({
         onRefresh();
       } catch (error) {
         console.error("Error removing member:", error);
-        alert("Có lỗi xảy ra khi xóa thành viên");
+        toast.error("Có lỗi xảy ra khi xóa thành viên");
       }
     }
   };
@@ -126,10 +127,10 @@ const TeamDetailModal: React.FC<TeamDetailModalProps> = ({
       await loadTeamDetail();
       onRefresh();
       setIsEditing(false);
-      alert("Cập nhật thông tin đội thành công!");
+      toast.success("Cập nhật thông tin đội thành công!");
     } catch (error) {
       console.error("Error updating team:", error);
-      alert("Có lỗi xảy ra khi cập nhật thông tin đội");
+      toast.error("Có lỗi xảy ra khi cập nhật thông tin đội");
     } finally {
       setSaving(false);
     }

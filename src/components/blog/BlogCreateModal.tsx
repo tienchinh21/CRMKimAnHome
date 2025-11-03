@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -97,7 +98,7 @@ const BlogCreateModal: React.FC<BlogCreateModalProps> = ({
       setImagePreview(response);
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Có lỗi xảy ra khi tải ảnh lên");
+      toast.error("Có lỗi xảy ra khi tải ảnh lên");
     } finally {
       setUploadingImage(false);
     }
@@ -144,7 +145,7 @@ const BlogCreateModal: React.FC<BlogCreateModalProps> = ({
       }
     } catch (err) {
       console.error("Error creating blog:", err);
-      alert("Có lỗi xảy ra khi tạo bài viết");
+      toast.error("Có lỗi xảy ra khi tạo bài viết");
     } finally {
       setSubmitting(false);
     }

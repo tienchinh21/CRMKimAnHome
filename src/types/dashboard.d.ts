@@ -1,4 +1,3 @@
-// Dashboard API Response Types
 export interface CustomerMetrics {
   currentMonthCount: number;
   previousMonthCount: number;
@@ -32,7 +31,6 @@ export interface SaleDashboardResponse {
   };
 }
 
-// Chart configuration types
 export interface ChartConfig {
   [key: string]: {
     label: string;

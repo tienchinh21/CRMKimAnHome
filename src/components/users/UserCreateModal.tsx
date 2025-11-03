@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,7 +118,7 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({
 
       const userResponse = await UserService.create(userPayload);
       const createdUser = userResponse.data;
-      console.log("User created successfully:", createdUser);
+      toast.success("Tạo người dùng thành công!");
 
       if (data.ledGroupId) {
         try {
@@ -156,7 +157,7 @@ const UserCreateModal: React.FC<UserCreateModalProps> = ({
       reset();
     } catch (error) {
       console.error("Error creating user:", error);
-      alert("Có lỗi xảy ra khi tạo người dùng");
+      toast.error("Có lỗi xảy ra khi tạo người dùng");
     } finally {
       setSubmitting(false);
       isSubmittingRef.current = false;

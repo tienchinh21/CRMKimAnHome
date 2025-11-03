@@ -49,7 +49,7 @@ const Dashboard: React.FC = () => {
   const { userProfile } = useAuth();
 
   // Check if user has SALE role specifically
-  const hasSaleRole = userProfile?.roleNames?.includes("SALE") || false;
+  const hasSaleRole = userProfile?.roleNames?.includes("Sale") || false;
 
   // Set default values to current month and year
   const currentDate = new Date();

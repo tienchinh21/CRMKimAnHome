@@ -1,4 +1,3 @@
-// Common Types
 export interface ApiResponse<T> {
   data: T;
   message: string;
@@ -12,7 +11,6 @@ export interface PaginatedResponse<T> {
   limit: number;
 }
 
-// API Response Types matching Swagger spec
 export interface Error {
   message?: string;
   exception?: string;
@@ -28,10 +26,9 @@ export interface RestResponseList<T> {
   content?: T[];
 }
 
-// Pagination types from Swagger
 export interface Pageable {
-  page?: number; // minimum: 0
-  size?: number; // minimum: 1
+  page?: number;
+  size?: number;
   sort?: string[];
 }
 

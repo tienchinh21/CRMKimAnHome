@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Building, Eye, Trash2 } from "lucide-react";
@@ -127,7 +128,7 @@ const ProjectsList: React.FC = () => {
       const hasApartments = apartmentsResponse.data?.response?.length > 0;
 
       if (hasApartments) {
-        alert(
+        toast.error(
           `Không thể xóa dự án "${projectToDelete.name}" vì còn có căn hộ liên quan.\n\nVui lòng xóa tất cả căn hộ trước khi xóa dự án.`
         );
         setDeleteModalOpen(false);
@@ -148,7 +149,7 @@ const ProjectsList: React.FC = () => {
         (error as any)?.message ||
         "Không thể xóa dự án";
 
-      alert(
+      toast.error(
         `Lỗi khi xóa dự án: ${errorMessage}\n\nCó thể dự án đang có dữ liệu liên quan hoặc lỗi server.`
       );
     } finally {

@@ -34,7 +34,6 @@ export interface ReponseBlogDto {
   updatedBy: string;
 }
 
-// Blog Category Types
 export interface BlogCategory {
   id: string;
   name: string;
@@ -43,8 +42,6 @@ export interface BlogCategory {
   updatedAt: string;
 }
 
-// Blog Specification types for filtering
 export interface SpecificationBlog {
-  // Add filter properties as needed
   [key: string]: any;
 }

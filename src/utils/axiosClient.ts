@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 
 const baseURL = import.meta.env.VITE_REACT_URL;
 
@@ -12,13 +13,12 @@ axiosClient.interceptors.request.use((config: any) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
-  // Only set Content-Type for non-FormData requests
-  // For FormData, let axios set it automatically with boundary
+
+
   if (!(config.data instanceof FormData)) {
     config.headers["Content-Type"] = "application/json";
   }
-  
+
   return config;
 });
 
@@ -26,7 +26,12 @@ axiosClient.interceptors.response.use(
   (response: any) => response,
   (error: any) => {
     const message =
-      error?.response?.data?.message || error?.message || "Unknown error";
+      error?.response?.data?.error?.message ||
+      error?.message ||
+      "Unknown error";
+
+    toast.error(message);
+
     return Promise.reject(new Error(message));
   }
 );

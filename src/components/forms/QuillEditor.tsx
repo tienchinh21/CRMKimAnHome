@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { toast } from "sonner";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -137,7 +138,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
           editor?.chain().focus().setImage({ src: imageUrl }).run();
         } catch (error) {
           console.error("Error uploading image:", error);
-          alert("Lỗi khi tải ảnh lên. Vui lòng thử lại.");
+          toast.error("Lỗi khi tải ảnh lên. Vui lòng thử lại.");
         }
       }
       document.body.removeChild(input);

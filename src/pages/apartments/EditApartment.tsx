@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -209,10 +210,10 @@ const EditApartment: React.FC = () => {
       if (!response.error) {
         navigate("/apartments");
       } else {
-        alert("Có lỗi xảy ra khi cập nhật căn hộ");
+        toast.error("Có lỗi xảy ra khi cập nhật căn hộ");
       }
     } catch (error) {
-      alert("Có lỗi xảy ra khi cập nhật căn hộ");
+      toast.error("Có lỗi xảy ra khi cập nhật căn hộ");
     } finally {
       setIsSubmitting(false);
     }

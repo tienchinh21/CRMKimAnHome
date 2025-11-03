@@ -10,16 +10,14 @@ import type { CreateUserDto } from "@/types/team";
 
 export interface UserListParams {
   spec?: any;
-  filter?: string; // Spring Filter syntax
+  filter?: string; 
   pageable?: Pageable;
 }
 
 const UserService = {
-  // Get all users with pagination and filtering
   async getAll(params?: UserListParams) {
     const queryParams = new URLSearchParams();
 
-    // Add pageable params
     if (params?.pageable) {
       if (params.pageable.page !== undefined) {
         queryParams.append("pageable.page", params.pageable.page.toString());
@@ -34,14 +32,12 @@ const UserService = {
       }
     }
 
-    // Add spec params (if needed for filtering)
     if (params?.spec) {
       Object.entries(params.spec).forEach(([key, value]) => {
         queryParams.append(`spec.${key}`, String(value));
       });
     }
 
-    // Add filter param
     if (params?.filter) {
       queryParams.append("filter", params.filter);
     }
@@ -52,13 +48,11 @@ const UserService = {
     return { ...response, data: extractData(response) };
   },
 
-  // Get user by ID
   async getById(id: string): Promise<{ data: UserDetailResponse }> {
     const response = await axiosClient.get(`/users/${id}`);
     return { data: response.data.content };
   },
 
-  // Create new user
   async create(payload: {
     data: CreateUserDto;
     file?: File;
@@ -70,7 +64,6 @@ const UserService = {
     return { data: response.data.content };
   },
 
-  // Update user
   async update(
     id: string,
     payload: { data: UpdateUserDto; file?: File }
@@ -82,7 +75,6 @@ const UserService = {
     return { data: response.data.content };
   },
 
-  // Delete user
   async delete(id: string): Promise<void> {
     await axiosClient.delete(`/users/${id}`);
   },

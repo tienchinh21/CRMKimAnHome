@@ -22,7 +22,6 @@ const StorageService = {
       }
     );
 
-    // API returns the URL as a string
     return response.data;
   },
 

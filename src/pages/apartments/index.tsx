@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Home, Eye, Trash2, Building2, Globe, Lock } from "lucide-react";
@@ -169,7 +170,7 @@ const ApartmentsList: React.FC = () => {
           loadApartments(); // Reload the list
         } catch (error) {
           console.error("❌ Error deleting apartment:", error);
-          alert("Có lỗi xảy ra khi xóa căn hộ");
+          toast.error("Có lỗi xảy ra khi xóa căn hộ");
         }
       }
     },
