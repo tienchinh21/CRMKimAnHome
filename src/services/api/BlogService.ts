@@ -1,7 +1,6 @@
 import axiosClient from "@/utils/axiosClient";
 import axios from "axios";
 
-// Helper function to extract data from API response
 const extractData = (response: any) => {
   if (response.data.content === null || response.data.content === undefined) {
     return response.data;
@@ -49,7 +48,7 @@ export interface ReponseBlogDto {
 }
 
 export interface BlogListParams {
-  filter?: string; // Spring Filter syntax
+  filter?: string; 
   pageable?: {
     page?: number;
     size?: number;
@@ -57,7 +56,6 @@ export interface BlogListParams {
   };
 }
 
-// Blog Category DTOs
 export interface CreateBlogCategoryDto {
   name: string;
   description?: string;
@@ -81,11 +79,9 @@ export interface ReponseBlogCategoryDto {
 }
 
 const BlogService = {
-  // Get all blogs with pagination and filtering
   async getAll(params?: BlogListParams) {
     const queryParams = new URLSearchParams();
 
-    // Add pageable params
     if (params?.pageable) {
       if (params.pageable.page !== undefined) {
         queryParams.append("pageable.page", params.pageable.page.toString());
@@ -100,7 +96,6 @@ const BlogService = {
       }
     }
 
-    // Add filter param
     if (params?.filter) {
       queryParams.append("filter", params.filter);
     }
@@ -109,33 +104,27 @@ const BlogService = {
     return { ...response, data: extractData(response) };
   },
 
-  // Get blog by ID
   async getById(id: string): Promise<{ data: ReponseBlogDto }> {
     const response = await axiosClient.get(`/blogs/${id}`);
     return { data: extractData(response) };
   },
 
-  // Create new blog
   async create(payload: CreateBlogDto): Promise<{ data: ReponseBlogDto }> {
     const response = await axiosClient.post("/blogs", payload);
     return { data: extractData(response) };
   },
 
-  // Update blog
   async update(id: string, payload: UpdateBlogDto): Promise<{ data: void }> {
     const response = await axiosClient.put(`/blogs/${id}`, payload);
     return { data: extractData(response) };
   },
 
-  // Delete blog
   async delete(id: string): Promise<{ data: void }> {
     const response = await axiosClient.delete(`/blogs/${id}`);
     return { data: extractData(response) };
   },
 
-  // Helper methods for common operations
 
-  // Get blogs with simple pagination (wrapper for easier use)
   async getWithPagination(page: number = 0, size: number = 10) {
     const params: BlogListParams = {
       pageable: { page, size },
@@ -144,21 +133,19 @@ const BlogService = {
     return this.getAll(params);
   },
 
-  // Search blogs by title or content
   async search(
     searchTerm: string,
     pageable?: { page?: number; size?: number }
   ) {
     const params: BlogListParams = {
-      filter: `title ~~ '${searchTerm}'`, // Assuming title field can be searched
+      filter: `title ~~ '${searchTerm}'`,
       pageable: pageable || { page: 0, size: 10 },
     };
 
     return this.getAll(params);
   },
 
-  // Get blogs by type (news, legal, outstanding project)
-  async getByType(
+    async getByType(
     type: "news" | "legal" | "outstanding",
     pageable?: { page?: number; size?: number }
   ) {
@@ -183,8 +170,6 @@ const BlogService = {
     return this.getAll(params);
   },
 
-  // =================== Image Upload ===================
-  // Upload image for blog content
   async uploadImage(file: File): Promise<string> {
     const formData = new FormData();
     formData.append("file", file);
@@ -202,8 +187,7 @@ const BlogService = {
     return response.data; // API returns the URL directly
   },
 
-  // =================== Categories ===================
-  // Get all blog categories
+
   async getCategories() {
     const response = await axiosClient.get("/category-blog");
     return { ...response, data: extractData(response) } as {

@@ -76,7 +76,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description: "Quản lý hệ thống (Dev Team)",
     color: "bg-red-100 text-red-800",
     permissions: [
-      // Full access to everything
+      // Full access
       PERMISSIONS.PROJECT_CREATE,
       PERMISSIONS.PROJECT_READ,
       PERMISSIONS.PROJECT_UPDATE,
@@ -232,6 +232,9 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     permissions: [
       // Dashboard access
       PERMISSIONS.DASHBOARD_READ,
+
+      PERMISSIONS.APARTMENT_READ,
+       PERMISSIONS.PROJECT_READ,
       // Can create and read customers
       PERMISSIONS.CUSTOMER_CREATE,
       PERMISSIONS.CUSTOMER_READ,
@@ -241,7 +244,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
       PERMISSIONS.DEAL_READ,
       // Can only read deal payments (no edit/delete)
       PERMISSIONS.DEAL_PAYMENT_READ,
-      // ⭐ Can read own payroll and bonus
+      //  Can read own payroll and bonus
       PERMISSIONS.PAYROLL_READ,
       PERMISSIONS.BONUS_READ,
     ],

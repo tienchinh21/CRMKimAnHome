@@ -7,7 +7,6 @@ import type {
 } from "@/types/bonus";
 
 const BonusService = {
-  // Get all bonuses with optional filter
   async getAll(filter?: string): Promise<BonusListResponse> {
     try {
       const queryParams = new URLSearchParams();
@@ -25,7 +24,6 @@ const BonusService = {
     }
   },
 
-  // Get bonus by ID
   async getById(id: string): Promise<BonusResponse> {
     try {
       const response = await axiosClient.get(`/bonuses/${id}`);
@@ -36,7 +34,6 @@ const BonusService = {
     }
   },
 
-  // Create new bonus
   async create(bonusData: CreateBonusRequest): Promise<BonusResponse> {
     try {
       const response = await axiosClient.post(`/bonuses`, bonusData);
@@ -47,7 +44,6 @@ const BonusService = {
     }
   },
 
-  // Update bonus
   async update(bonusData: UpdateBonusRequest): Promise<BonusResponse> {
     try {
       const response = await axiosClient.put(
@@ -61,7 +57,6 @@ const BonusService = {
     }
   },
 
-  // Delete bonus
   async delete(id: string): Promise<void> {
     try {
       await axiosClient.delete(`/bonuses/${id}`);
@@ -71,8 +66,6 @@ const BonusService = {
     }
   },
 
-  // Build filter string for Spring Filter
-  // Example: name ~ '*John*' and startDate >= '2025-01-01'
   buildFilter(params: {
     search?: string;
     startDate?: string;

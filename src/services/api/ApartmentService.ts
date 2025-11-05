@@ -20,16 +20,14 @@ export interface UpdateApartmentPayload {
 }
 
 export interface ApartmentListParams {
-  filter?: string; // Spring Filter syntax
+  filter?: string; 
   pageable?: Pageable;
 }
 
 const ApartmentService = {
-  // Get all apartments with pagination and filtering
   async getAll(params?: ApartmentListParams) {
     const queryParams = new URLSearchParams();
 
-    // Add pageable params
     if (params?.pageable) {
       if (params.pageable.page !== undefined) {
         queryParams.append("pageable.page", params.pageable.page.toString());
@@ -44,7 +42,6 @@ const ApartmentService = {
       }
     }
 
-    // Add filter param
     if (params?.filter) {
       queryParams.append("filter", params.filter);
     }
@@ -55,7 +52,6 @@ const ApartmentService = {
     return { ...response, data: extractData(response) };
   },
 
-  // Get apartment by ID
   async getById(id: string): Promise<RestResponse<ReponseDetailApartmentDto>> {
     const response = await axiosClient.get(
       `/apartments/id/${id}`
@@ -63,7 +59,6 @@ const ApartmentService = {
     return response.data;
   },
 
-  // Get apartment by slug
   async getBySlug(
     slug: string
   ): Promise<RestResponse<ReponseDetailApartmentDto>> {
@@ -73,7 +68,6 @@ const ApartmentService = {
     return { ...response, data: extractData(response) };
   },
 
-  // Create new apartment
   async create(
     payload: CreateApartmentPayload
   ): Promise<RestResponse<ReponseApartmentDto>> {
@@ -87,7 +81,6 @@ const ApartmentService = {
     return { ...response, data: extractData(response) };
   },
 
-  // Update apartment
   async update(
     id: string,
     payload: UpdateApartmentPayload
@@ -102,17 +95,14 @@ const ApartmentService = {
     return { ...response, data: extractData(response) };
   },
 
-  // Delete apartment
-  async delete(id: string): Promise<RestResponse<void>> {
+    async delete(id: string): Promise<RestResponse<void>> {
     const response = await axiosClient.delete(
       `/apartments/${id}`
     );
     return { ...response, data: extractData(response) };
   },
 
-  // Helper methods for common operations
 
-  // Get apartments by project ID (using Spring Filter syntax)
   async getByProjectId(projectId: string, pageable?: Pageable) {
     const params: ApartmentListParams = {
       filter: `project.id : '${projectId}'`,
@@ -122,7 +112,6 @@ const ApartmentService = {
     return this.getAll(params);
   },
 
-  // Get apartments with simple pagination (wrapper for easier use)
   async getWithPagination(page: number = 0, size: number = 10) {
     const params: ApartmentListParams = {
       pageable: { page, size },
@@ -131,7 +120,6 @@ const ApartmentService = {
     return this.getAll(params);
   },
 
-  // Search apartments by name or other criteria
   async search(searchTerm: string, pageable?: Pageable) {
     const params: ApartmentListParams = {
       filter: `name ~ '*${searchTerm}*'`,
@@ -141,7 +129,6 @@ const ApartmentService = {
     return this.getAll(params);
   },
 
-  // Legal Management APIs
   async getLegals(apartmentId: string) {
     const response = await axiosClient.get(
       `/legals?apartmentId=${apartmentId}`

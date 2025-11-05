@@ -19,7 +19,6 @@ import { formatCurrency } from "@/utils/format";
 import SelectWithSearch from "@/components/common/SelectWithSearch";
 import QuillEditor from "@/components/forms/QuillEditor";
 
-// Validation schema
 const createApartmentSchema = z.object({
   name: z
     .string()
