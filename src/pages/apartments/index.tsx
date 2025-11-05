@@ -96,10 +96,8 @@ const ApartmentsList: React.FC = () => {
     () => [
       { value: "all", label: "Tất cả trạng thái" },
       { value: "0", label: "Còn trống" },
-      { value: "1", label: "Đã bán" },
-      { value: "2", label: "Đã cho thuê" },
-      { value: "3", label: "Đã đặt cọc" },
-      { value: "4", label: "Bảo trì" },
+      { value: "1", label: "Đã bán/Đã thuê" },
+      { value: "2", label: "Đang trong giao dịch" },
     ],
     []
   );
@@ -129,7 +127,8 @@ const ApartmentsList: React.FC = () => {
         .includes(search.toLowerCase());
       const matchProject =
         projectFilter === "all" || apt.projectId === projectFilter;
-      const matchStatus = statusFilter === "all" || apt.status === statusFilter;
+      // Convert status to string for comparison (API returns number)
+      const matchStatus = statusFilter === "all" || String(apt.status) === statusFilter;
       const matchType =
         typeFilter === "all" ||
         (typeFilter === "sell" && apt.isSell) ||
@@ -167,9 +166,8 @@ const ApartmentsList: React.FC = () => {
       ) {
         try {
           await ApartmentService.delete(apartment.id);
-          loadApartments(); // Reload the list
+          loadApartments(); 
         } catch (error) {
-          console.error("❌ Error deleting apartment:", error);
           toast.error("Có lỗi xảy ra khi xóa căn hộ");
         }
       }
@@ -183,15 +181,15 @@ const ApartmentsList: React.FC = () => {
 
   const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1); 
   }, []);
 
-  // Define columns BEFORE any conditional returns (Rules of Hooks)
   const columns: Column<ReponseApartmentDto>[] = useMemo(
     () => [
       {
         key: "name",
         header: "Tên căn hộ",
+        className: "min-w-[200px]",
         render: (apt) => (
           <Link
             to={`/apartments/${apt.id}`}
@@ -203,8 +201,19 @@ const ApartmentsList: React.FC = () => {
         ),
       },
       {
+        key: "alias",
+        header: "Alias",
+        className: "min-w-[150px]",
+        render: (apt) => (
+          <span className="text-gray-700">
+            {apt.alias || <span className="text-gray-400 italic">Chưa có</span>}
+          </span>
+        ),
+      },
+      {
         key: "publicPrice",
         header: "Giá công khai",
+        className: "min-w-[150px]",
         render: (apt) => (
           <span className="font-semibold text-green-600">
             {formatCurrency(apt.publicPrice)}
@@ -214,6 +223,7 @@ const ApartmentsList: React.FC = () => {
       {
         key: "privatePrice",
         header: "Giá nội bộ",
+        className: "min-w-[150px]",
         render: (apt) => (
           <span className="font-semibold text-blue-600">
             {formatCurrency(apt.privatePrice)}
@@ -223,44 +233,55 @@ const ApartmentsList: React.FC = () => {
       {
         key: "area",
         header: "Diện tích",
+        className: "min-w-[120px]",
         render: (apt) => `${apt.area}m²`,
       },
       {
         key: "numberBedroom",
         header: "Phòng ngủ",
+        className: "min-w-[110px]",
         render: (apt) => `${apt.numberBedroom} PN`,
       },
       {
         key: "numberBathroom",
         header: "Phòng tắm",
+        className: "min-w-[110px]",
         render: (apt) => `${apt.numberBathroom} PT`,
       },
       {
         key: "status",
         header: "Trạng thái",
+        className: "min-w-[140px]",
         render: (apt) => {
-          const statusMap: Record<string, { label: string; color: string }> = {
-            "0": { label: "Còn trống", color: "bg-green-100 text-green-800" },
-            "1": { label: "Đã bán", color: "bg-blue-100 text-blue-800" },
-            "2": {
-              label: "Đã cho thuê",
-              color: "bg-yellow-100 text-yellow-800",
-            },
-            "3": {
-              label: "Đã đặt cọc",
-              color: "bg-orange-100 text-orange-800",
-            },
-            "4": { label: "Bảo trì", color: "bg-red-100 text-red-800" },
-          };
-          const status = statusMap[apt.status] || {
-            label: "Không xác định",
-            color: "bg-gray-100 text-gray-800",
-          };
+          let label = "";
+          let color = "";
+
+          const statusStr = String(apt.status);
+
+          switch (statusStr) {
+            case "0":
+              label = "Còn trống";
+              color = "bg-green-100 text-green-800";
+              break;
+            case "1":
+              // Đã bán hoặc đã thuê dựa vào type
+              label = apt.isSell ? "Đã bán" : "Đã thuê";
+              color = "bg-blue-100 text-blue-800";
+              break;
+            case "2":
+              label = "Đang trong giao dịch";
+              color = "bg-yellow-100 text-yellow-800";
+              break;
+            default:
+              label = "Không xác định";
+              color = "bg-gray-100 text-gray-800";
+          }
+
           return (
             <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}
+              className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}
             >
-              {status.label}
+              {label}
             </span>
           );
         },
@@ -268,6 +289,7 @@ const ApartmentsList: React.FC = () => {
       {
         key: "isSell",
         header: "Loại",
+        className: "min-w-[120px]",
         render: (apt) => (
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -282,7 +304,8 @@ const ApartmentsList: React.FC = () => {
       },
       {
         key: "isPublic",
-        header: "Trạng thái",
+        header: "Hiển thị",
+        className: "min-w-[140px]",
         render: (apt) => (
           <div className="flex items-center gap-2">
             {apt.isPublic ? (
@@ -306,11 +329,9 @@ const ApartmentsList: React.FC = () => {
     []
   );
 
-  // Loading state UI
   if (loading) {
     return (
       <div className="space-y-6">
-        {/* Breadcrumb */}
         <Breadcrumb />
 
         <div className="flex justify-between items-center">
@@ -425,45 +446,47 @@ const ApartmentsList: React.FC = () => {
         </Card>
       ) : (
         <Card>
-          <CardContent className="">
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <DataTable
-                columns={columns}
-                data={filteredApartments}
-                actions={(apt) => (
-                  <div className="inline-flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link to={`/apartments/${apt.id}`}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>Xem chi tiết</TooltipContent>
-                    </Tooltip>
-                    {canDelete && (
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <div className="min-w-full inline-block align-middle">
+                <DataTable
+                  columns={columns}
+                  data={filteredApartments}
+                  actions={(apt) => (
+                    <div className="inline-flex items-center gap-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleDeleteApartment(apt)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Link to={`/apartments/${apt.id}`}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
                         </TooltipTrigger>
-                        <TooltipContent>Xóa</TooltipContent>
+                        <TooltipContent>Xem chi tiết</TooltipContent>
                       </Tooltip>
-                    )}
-                  </div>
-                )}
-              />
+                      {canDelete && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleDeleteApartment(apt)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Xóa</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  )}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

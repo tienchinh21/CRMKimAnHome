@@ -23,10 +23,8 @@ import { PERMISSIONS } from "@/lib/rbac/permissions";
 const ProjectsList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  // Modal đã loại bỏ; dùng route /projects/new thay thế
-  // Filter states
   const [search, setSearch] = useState("");
-  const [locationFilter, setLocationFilter] = useState("all");
+  // const [locationFilter, setLocationFilter] = useState("all"); // Commented: Pipeline filter not needed
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,28 +45,24 @@ const ProjectsList: React.FC = () => {
     try {
       setLoading(true);
       const response = await ProjectService.getWithPagination(
-        currentPage - 1, // API uses 0-based pagination
+        currentPage - 1,
         itemsPerPage
       );
 
-      // Handle pagination response
       if (
         response.data &&
         typeof response.data === "object" &&
         "info" in response.data
       ) {
-        // PaginationResponse format
         const paginationData = response.data as any;
         setProjects(paginationData.response || []);
         setTotalPages(paginationData.info?.pages || 0);
         setTotalItems(paginationData.info?.total || 0);
       } else {
-        // Simple array response
         setProjects(response.data || []);
       }
     } catch (error) {
       console.error("Error loading projects:", error);
-      // Fallback to empty array on error
       setProjects([]);
       setTotalPages(0);
       setTotalItems(0);
@@ -77,27 +71,28 @@ const ProjectsList: React.FC = () => {
     }
   };
 
-  // Build filter options based on loaded projects
-  const locationOptions = React.useMemo(() => {
-    const set = new Set<string>();
-    projects.forEach((p) => p.location && set.add(p.location));
-    return Array.from(set).map((l) => ({ value: l, label: l }));
-  }, [projects]);
+
+  // Commented: Pipeline/Location filter not needed
+  // const locationOptions = React.useMemo(() => {
+  //   const set = new Set<string>();
+  //   projects.forEach((p) => p.location && set.add(p.location));
+  //   return Array.from(set).map((l) => ({ value: l, label: l }));
+  // }, [projects]);
 
   const filteredProjects = React.useMemo(() => {
     return projects.filter((p) => {
       const matchSearch = `${p.name} ${p.location}`
         .toLowerCase()
         .includes(search.toLowerCase());
-      const matchLocation =
-        locationFilter === "all" || p.location === locationFilter;
-      return matchSearch && matchLocation;
+      // const matchLocation =
+      //   locationFilter === "all" || p.location === locationFilter;
+      return matchSearch; // && matchLocation;
     });
-  }, [projects, search, locationFilter]);
+  }, [projects, search]); // , locationFilter
 
   const resetFilters = () => {
     setSearch("");
-    setLocationFilter("all");
+    // setLocationFilter("all");
   };
 
   const handlePageChange = (page: number) => {
@@ -119,8 +114,7 @@ const ProjectsList: React.FC = () => {
 
     setIsDeleting(true);
     try {
-      // Check if project has apartments first
-      console.log("🔍 Checking if project has apartments:", projectToDelete.id);
+
       const apartmentsResponse = await ApartmentService.getByProjectId(
         projectToDelete.id,
         { page: 0, size: 1 }
@@ -162,15 +156,6 @@ const ProjectsList: React.FC = () => {
       <div className="space-y-6">
         {/* Breadcrumb */}
         <Breadcrumb />
-
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Quản lý Dự án</h1>
-          <Button disabled>
-            <Plus className="h-4 w-4 mr-2" />
-            Tạo dự án mới
-          </Button>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="animate-pulse">
@@ -209,10 +194,8 @@ const ProjectsList: React.FC = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 p-4 md:p-6">
-      {/* Breadcrumb */}
       <Breadcrumb />
 
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -223,7 +206,6 @@ const ProjectsList: React.FC = () => {
           </p>
         </div>
 
-        {/* ⭐ Chỉ hiển thị nút tạo nếu có quyền */}
         <CanAccess permission={PERMISSIONS.PROJECT_CREATE}>
           <Link to="/projects/new">
             <Button className="w-full sm:w-auto">
@@ -243,11 +225,12 @@ const ProjectsList: React.FC = () => {
             value: search,
             onChange: setSearch,
           },
-          location: {
-            options: locationOptions,
-            value: locationFilter,
-            onChange: setLocationFilter,
-          },
+          // Commented: Pipeline/Location filter not needed
+          // location: {
+          //   options: locationOptions,
+          //   value: locationFilter,
+          //   onChange: setLocationFilter,
+          // },
         }}
         onReset={resetFilters}
         onRefresh={loadProjects}
@@ -264,7 +247,6 @@ const ProjectsList: React.FC = () => {
             <p className="text-gray-600 mb-6">
               Bắt đầu bằng cách tạo dự án đầu tiên của bạn
             </p>
-            {/* ⭐ Chỉ hiển thị nút tạo nếu có quyền */}
             <CanAccess permission={PERMISSIONS.PROJECT_CREATE}>
               <Link to="/projects/new">
                 <Button>
@@ -298,7 +280,6 @@ const ProjectsList: React.FC = () => {
                       </TooltipTrigger>
                       <TooltipContent>Xem</TooltipContent>
                     </Tooltip>
-                    {/* ⭐ Chỉ hiển thị nút xóa nếu có quyền */}
                     <CanAccess permission={PERMISSIONS.PROJECT_DELETE}>
                       <Tooltip>
                         <TooltipTrigger asChild>

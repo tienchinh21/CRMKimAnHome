@@ -34,8 +34,11 @@ import {
 } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { formatCurrency } from "@/utils/format";
+import { usePermission } from "@/hooks/usePermission";
 
 const ApartmentDetail: React.FC = () => {
+  const { isRole, can } = usePermission();
+
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [apartment, setApartment] = useState<ReponseDetailApartmentDto | null>(
@@ -50,16 +53,13 @@ const ApartmentDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  // Edit mode states
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newLegal, setNewLegal] = useState("");
 
-  // Image management states
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [deletedImages, setDeletedImages] = useState<string[]>([]);
 
-  // Edit form states
   const [editData, setEditData] = useState<UpdateApartmentDto>({
     name: "",
     publicPrice: "",
@@ -108,7 +108,6 @@ const ApartmentDetail: React.FC = () => {
       if (response.content) {
         setApartment(response.content);
 
-        // Initialize edit data
         setEditData({
           name: response.content.name || "",
           publicPrice: response.content.publicPrice || "",
@@ -134,7 +133,6 @@ const ApartmentDetail: React.FC = () => {
           response.content.project.name,
         ]);
 
-        // Load legal information
         await loadLegals(id);
       } else {
         setError("Không thể tải thông tin căn hộ");
@@ -152,7 +150,6 @@ const ApartmentDetail: React.FC = () => {
     loadProjects();
   }, [loadApartmentDetail, loadProjects]);
 
-  // Reset selected image when apartment changes
   useEffect(() => {
     setSelectedImageIndex(0);
   }, [apartment?.id]);
@@ -166,7 +163,6 @@ const ApartmentDetail: React.FC = () => {
     let colorClass = "bg-gray-100 text-gray-800";
     let label = statusOption?.label || "Không xác định";
 
-    // Phân biệt màu sắc theo status
     switch (statusValue) {
       case "0":
         colorClass = "bg-green-100 text-green-800 border-green-200";
@@ -214,7 +210,6 @@ const ApartmentDetail: React.FC = () => {
     setSelectedImages([]);
     setDeletedImages([]);
 
-    // Reset edit data to original values
     if (apartment) {
       setEditData({
         name: apartment.name || "",
@@ -244,15 +239,11 @@ const ApartmentDetail: React.FC = () => {
     try {
       setSaving(true);
 
-      // Prepare all images to keep (existing images not deleted + new images)
       const imagesToKeep: File[] = [...selectedImages];
 
-      // Add existing images that are not marked for deletion
       if (apartment.images && apartment.images.length > 0) {
         for (const imageUrl of apartment.images) {
-          // Skip if this image is marked for deletion
           if (!deletedImages.includes(imageUrl)) {
-            // Fetch from URL directly (removed localStorage logic)
             try {
               const response = await fetch(imageUrl);
               const blob = await response.blob();
@@ -271,11 +262,9 @@ const ApartmentDetail: React.FC = () => {
         files: imagesToKeep,
       });
 
-      // Reset image states
       setSelectedImages([]);
       setDeletedImages([]);
 
-      // Reload apartment data
       await loadApartmentDetail();
       setIsEditing(false);
 
@@ -311,7 +300,6 @@ const ApartmentDetail: React.FC = () => {
     []
   );
 
-  // Image management functions
   const handleImageSelect = useCallback((files: File[]) => {
     setSelectedImages((prev) => [...prev, ...files]);
   }, []);
@@ -361,7 +349,6 @@ const ApartmentDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="space-y-8">
-          {/* Header Skeleton */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
@@ -435,36 +422,40 @@ const ApartmentDetail: React.FC = () => {
               </div>
             </div>
 
-            {!isEditing ? (
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={handleEdit}
-                  variant="outline"
-                  className="flex items-center gap-2 border-teal-600 text-teal-600 hover:bg-teal-50 px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                  <Edit className="h-4 w-4" />
-                  Chỉnh sửa
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border-gray-300 hover:bg-gray-50"
-                >
-                  <X className="h-4 w-4" />
-                  Hủy
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Đang lưu..." : "Lưu"}
-                </Button>
-              </div>
+            {isRole(["ADMIN", "MANAGER", "SUPERMARKET"]) && (
+              <>
+                {!isEditing ? (
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={handleEdit}
+                      variant="outline"
+                      className="flex items-center gap-2 border-teal-600 text-teal-600 hover:bg-teal-50 px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Chỉnh sửa
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={handleCancel}
+                      variant="outline"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg border-gray-300 hover:bg-gray-50"
+                    >
+                      <X className="h-4 w-4" />
+                      Hủy
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      <Save className="h-4 w-4" />
+                      {saving ? "Đang lưu..." : "Lưu"}
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

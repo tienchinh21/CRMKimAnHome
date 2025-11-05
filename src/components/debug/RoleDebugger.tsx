@@ -1,11 +1,7 @@
-/**
- * RoleDebugger Component
- * Hiển thị thông tin role và quyền hiện tại (chỉ dùng trong development)
- */
+
 
 import { usePermission } from '@/hooks/usePermission';
 import { useAuth } from '@/contexts/AuthContext';
-import { getRoleDisplayName, getRoleDescription } from '@/lib/rbac/utils';
 
 export const RoleDebugger: React.FC = () => {
   const { role, getPermissions, getRoleName, getRoleDesc } = usePermission();

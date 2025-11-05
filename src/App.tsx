@@ -94,7 +94,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster position="top-right" richColors />
-          <RoleDebugger />
+          {/* <RoleDebugger /> */}
         </Router>
       </AuthProvider>
     </Provider>

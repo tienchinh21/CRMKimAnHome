@@ -162,18 +162,13 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description: "Quản lý nhóm của mình",
     color: "bg-green-100 text-green-800",
     permissions: [
-      // Can create and read customers (but not phone)
       PERMISSIONS.CUSTOMER_CREATE,
       PERMISSIONS.CUSTOMER_READ,
-      // Can create, read, and update deals (but not complete or delete)
       PERMISSIONS.DEAL_CREATE,
       PERMISSIONS.DEAL_READ,
       PERMISSIONS.DEAL_UPDATE,
-      // Can only read deal payments (no edit/delete)
       PERMISSIONS.DEAL_PAYMENT_READ,
-      // Can manage team members
       PERMISSIONS.TEAM_MANAGE,
-      // Can read own payroll
       PERMISSIONS.PAYROLL_READ,
     ],
   },
@@ -184,7 +179,6 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description: "Quản lý deal và nội dung",
     color: "bg-purple-100 text-purple-800",
     permissions: [
-      // Full access to apartments
       PERMISSIONS.PROJECT_CREATE,
       PERMISSIONS.PROJECT_READ,
       PERMISSIONS.PROJECT_UPDATE,
@@ -193,17 +187,14 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
       PERMISSIONS.APARTMENT_READ,
       PERMISSIONS.APARTMENT_UPDATE,
       PERMISSIONS.APARTMENT_DELETE,
-      // Can read deals
       PERMISSIONS.DEAL_READ,
       PERMISSIONS.DEAL_UPDATE,
       PERMISSIONS.DEAL_DELETE,
       PERMISSIONS.DEAL_COMPLETE,
-      // Full access to deal payments
       PERMISSIONS.DEAL_PAYMENT_CREATE,
       PERMISSIONS.DEAL_PAYMENT_READ,
       PERMISSIONS.DEAL_PAYMENT_UPDATE,
       PERMISSIONS.DEAL_PAYMENT_DELETE,
-      // Full access to blog
       PERMISSIONS.BLOG_CREATE,
       PERMISSIONS.BLOG_READ,
       PERMISSIONS.BLOG_UPDATE,
@@ -217,9 +208,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description: "Quản lý deal payment của dự án",
     color: "bg-yellow-100 text-yellow-800",
     permissions: [
-      // Can read deal payments
       PERMISSIONS.DEAL_PAYMENT_READ,
-      // Can update deal payments (only for assigned projects)
       PERMISSIONS.DEAL_PAYMENT_UPDATE,
     ],
   },
@@ -230,21 +219,15 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description: "Tạo khách hàng và deal",
     color: "bg-indigo-100 text-indigo-800",
     permissions: [
-      // Dashboard access
       PERMISSIONS.DASHBOARD_READ,
-
       PERMISSIONS.APARTMENT_READ,
-       PERMISSIONS.PROJECT_READ,
-      // Can create and read customers
+      PERMISSIONS.PROJECT_READ,
       PERMISSIONS.CUSTOMER_CREATE,
       PERMISSIONS.CUSTOMER_READ,
       PERMISSIONS.CUSTOMER_READ_PHONE,
-      // Can create and read deals
       PERMISSIONS.DEAL_CREATE,
       PERMISSIONS.DEAL_READ,
-      // Can only read deal payments (no edit/delete)
       PERMISSIONS.DEAL_PAYMENT_READ,
-      //  Can read own payroll and bonus
       PERMISSIONS.PAYROLL_READ,
       PERMISSIONS.BONUS_READ,
     ],

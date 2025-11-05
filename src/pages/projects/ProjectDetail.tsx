@@ -14,17 +14,18 @@ import ProjectDetailsDisplay from "@/components/projects/ProjectDetailsDisplay";
 import ProjectAmenitiesDisplay from "@/components/projects/ProjectAmenitiesDisplay";
 import CreateProjectDetails from "@/components/forms/CreateProjectDetails";
 import CreateProjectAmenities from "@/components/forms/CreateProjectAmenities";
-
+    import { usePermission } from "@/hooks/usePermission";
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+    const { isRole } = usePermission();
+
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Display data states
   type DetailItem = { id?: string; name: string; data: string };
   const [details, setDetails] = useState<DetailItem[]>([]);
   const [originalDetails, setOriginalDetails] = useState<DetailItem[]>([]);
@@ -45,21 +46,17 @@ const ProjectDetail: React.FC = () => {
     ChildAmenity[]
   >([]);
 
-  // Loading states for amenities
   const [creatingParentAmenity, setCreatingParentAmenity] = useState(false);
   const [creatingChildAmenity, setCreatingChildAmenity] = useState(false);
 
-  // Image management states
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [deletedImages, setDeletedImages] = useState<string[]>([]);
 
-  // Project basic info edit states
   const [projectName, setProjectName] = useState("");
   const [projectAddress, setProjectAddress] = useState("");
   const [projectLongitude, setProjectLongitude] = useState("");
   const [projectLatitude, setProjectLatitude] = useState("");
 
-  // Edit form states
   const [newDetail, setNewDetail] = useState<DetailItem>({
     name: "",
     data: "",
@@ -273,14 +270,10 @@ const ProjectDetail: React.FC = () => {
     }
   };
 
-  // Project details management functions
   const handleRemoveDetail = (index: number) => {
-    console.log("🗑️ Removing detail at index:", index);
-    console.log("📋 Details before removal:", details);
-    // Just remove from local state, will be saved when user clicks "Lưu"
+
     setDetails((prev) => {
       const newDetails = prev.filter((_, i) => i !== index);
-      console.log("📋 Details after removal:", newDetails);
       return newDetails;
     });
   };
@@ -302,7 +295,6 @@ const ProjectDetail: React.FC = () => {
 
       if (createdAmenity) {
         setNewParentAmenity("");
-        // Gọi lại API GET để refresh danh sách amenities
         await loadAmenities();
       }
     } catch (error) {
@@ -330,7 +322,7 @@ const ProjectDetail: React.FC = () => {
 
       if (createdAmenity) {
         setNewChildAmenity({ name: "", parentName: "", parentId: "" });
-        // Gọi lại API GET để refresh danh sách amenities
+
         await loadAmenities();
       }
     } catch (error) {
@@ -342,11 +334,6 @@ const ProjectDetail: React.FC = () => {
 
   const handleSave = async () => {
     if (!id || !project) return;
-
-    console.log("💾 Starting save process...");
-    console.log("🔍 Project ID:", id);
-    console.log("📋 Details to save:", details);
-
     try {
       setSaving(true);
 
@@ -357,16 +344,12 @@ const ProjectDetail: React.FC = () => {
         fullAddress: projectAddress,
       };
 
-      // Prepare all images to keep (existing images not deleted + new images)
       const imagesToKeep: File[] = [...selectedImages];
 
-      // Add existing images that are not marked for deletion
       if (project.images && project.images.length > 0) {
         for (const imageUrl of project.images) {
           const url = typeof imageUrl === "string" ? imageUrl : imageUrl.url;
-          // Skip if this image is marked for deletion
           if (!deletedImages.includes(url)) {
-            // Try to get the image from localStorage first
             const savedImageKey = `project_image_${id}_${url.split("/").pop()}`;
             const savedImageData = localStorage.getItem(savedImageKey);
 
@@ -388,7 +371,6 @@ const ProjectDetail: React.FC = () => {
                 console.error("Error converting saved image to File:", error);
               }
             } else {
-              // If not in localStorage, try to fetch from URL
               try {
                 const response = await fetch(url);
                 const blob = await response.blob();
@@ -410,9 +392,7 @@ const ProjectDetail: React.FC = () => {
         imagesToKeep
       );
 
-      // Update project details (if any)
       if (details.length > 0) {
-        console.log("📝 Processing project details...");
         const detailPayloads = details.map((detail, idx) => ({
           name: detail.name,
           data: detail.data,
@@ -421,10 +401,7 @@ const ProjectDetail: React.FC = () => {
         }));
         console.log("📤 Detail payloads:", detailPayloads);
 
-        // Use PUT API to update all project information
-        console.log("🌐 Calling updateProjectInformation API...");
         await ProjectService.updateProjectInformation(id, detailPayloads);
-        console.log("✅ Project information updated successfully");
       } else {
         console.log("📝 No details to save");
       }
@@ -550,7 +527,9 @@ const ProjectDetail: React.FC = () => {
               </div>
             </div>
 
-            {!isEditing ? (
+ {isRole(["ADMIN", "MANAGER", "SUPERMARKET"]) && (
+    <>
+             {!isEditing ? (
               <Button
                 onClick={handleEdit}
                 className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -577,6 +556,8 @@ const ProjectDetail: React.FC = () => {
                   {saving ? "Đang lưu..." : "Lưu"}
                 </Button>
               </div>
+            )}
+             </>
             )}
           </div>
         </div>

@@ -5,11 +5,13 @@ import { type FilterOption } from "@/components/common/Filter";
 export interface DealFilters {
   search: string;
   status: string;
+  alias: string;
 }
 
 export const useDealFilters = () => {
   const [filterSearch, setFilterSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterAlias, setFilterAlias] = useState("");
   const [statusOptions, setStatusOptions] = useState<FilterOption[]>([]);
 
   // Load status options from CoreEnum
@@ -39,14 +41,16 @@ export const useDealFilters = () => {
   const resetFilters = useCallback(() => {
     setFilterSearch("");
     setFilterStatus("all");
+    setFilterAlias("");
   }, []);
 
   const getFilters = useCallback((): DealFilters => {
     return {
       search: filterSearch,
       status: filterStatus,
+      alias: filterAlias,
     };
-  }, [filterSearch, filterStatus]);
+  }, [filterSearch, filterStatus, filterAlias]);
 
   const findIdByName = useCallback((name: string, options: FilterOption[]) => {
     const found = options.find(
@@ -59,10 +63,12 @@ export const useDealFilters = () => {
     // State
     filterSearch,
     filterStatus,
+    filterAlias,
     statusOptions,
     // Setters
     setFilterSearch,
     setFilterStatus,
+    setFilterAlias,
     // Methods
     resetFilters,
     getFilters,

@@ -23,6 +23,11 @@ export const useDealData = (statusOptions: FilterOption[]) => {
           );
         }
 
+        // Alias filter - tìm theo alias căn hộ
+        if (filters.alias) {
+          filterParts.push(`apartment.alias ~ '*${filters.alias}*'`);
+        }
+
         // Status filter
         if (filters.status && filters.status !== "all") {
           const statusName = statusOptions.find(

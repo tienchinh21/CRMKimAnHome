@@ -10,6 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Plus, User, Building2, Eye } from "lucide-react";
 import { type Deal } from "@/services/api/DealService";
 import DealModal from "@/components/deals/DealModal";
@@ -40,19 +49,22 @@ const DealList: React.FC = () => {
   const [updatingStatusDealId, setUpdatingStatusDealId] = useState<
     string | null
   >(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{
+    dealId: string;
+    newStatusId: string;
+    newStatusName: string;
+  } | null>(null);
 
-  // Use custom hooks
   const filters = useDealFilters();
   const dealData = useDealData(filters.statusOptions);
 
-  // Load deals on mount
   useEffect(() => {
     if (filters.statusOptions.length > 0) {
       dealData.loadDeals(filters.filterSearch, filters.getFilters());
     }
   }, [filters.statusOptions.length]);
 
-  // Auto-apply filters with debounce
   useEffect(() => {
     if (filters.statusOptions.length > 0) {
       const timeoutId = setTimeout(() => {
@@ -60,27 +72,23 @@ const DealList: React.FC = () => {
       }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [filters.filterSearch, filters.filterStatus]);
+  }, [filters.filterSearch, filters.filterStatus, filters.filterAlias]);
 
-  // Handle create
   const handleCreate = useCallback(() => {
     setEditingDeal(null);
     setIsModalOpen(true);
   }, []);
 
-  // Handle view detail (show payment list)
   const handleViewDetail = useCallback((deal: Deal) => {
     setSelectedDealForList(deal);
     setIsPaymentListModalOpen(true);
   }, []);
 
-  // Handle modal close
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
     setEditingDeal(null);
   }, []);
 
-  // Handle modal save
   const handleModalSave = useCallback(() => {
     handleModalClose();
     dealData.loadDeals(filters.filterSearch, filters.getFilters());
@@ -91,65 +99,95 @@ const DealList: React.FC = () => {
     );
   }, [editingDeal, handleModalClose, dealData, filters]);
 
-  // Handle filter reset
   const handleFilterReset = useCallback(() => {
     filters.resetFilters();
     dealData.loadDeals("", { search: "", status: "all" });
   }, [filters, dealData]);
 
-  // Handle filter apply
   const handleFilterApply = useCallback(() => {
     dealData.loadDeals(filters.filterSearch, filters.getFilters());
   }, [filters, dealData]);
 
-  // Handle status update
   const handleStatusUpdate = useCallback(
     async (dealId: string, newStatusId: string) => {
-      setUpdatingStatusDealId(dealId);
-      try {
-        await dealData.updateDealStatus(dealId, newStatusId);
-      } finally {
-        setUpdatingStatusDealId(null);
+      // Tìm deal hiện tại
+      const deal = dealData.deals.find((d) => d.id === dealId);
+      if (!deal) return;
+
+      // Kiểm tra nếu deal đã ở trạng thái "Đã kí hợp đồng" hoặc "Huỷ giao dịch"
+      const currentStatus = deal.statusDealName || "";
+      if (
+        currentStatus === "Đã kí hợp đồng" ||
+        currentStatus === "Huỷ giao dịch"
+      ) {
+        toast.error(
+          `Không thể cập nhật trạng thái khi giao dịch đã "${currentStatus}"`
+        );
+        return;
       }
+
+      // Tìm tên trạng thái mới
+      const newStatusName =
+        filters.statusOptions.find((opt) => opt.value === newStatusId)?.label ||
+        "";
+
+      // Hiển thị confirm dialog
+      setPendingStatusUpdate({ dealId, newStatusId, newStatusName });
+      setConfirmDialogOpen(true);
     },
-    [dealData]
+    [dealData.deals, filters.statusOptions]
   );
 
-  // Handle open payment modal
+  const handleConfirmStatusUpdate = useCallback(async () => {
+    if (!pendingStatusUpdate) return;
+
+    setUpdatingStatusDealId(pendingStatusUpdate.dealId);
+    setConfirmDialogOpen(false);
+
+    try {
+      await dealData.updateDealStatus(
+        pendingStatusUpdate.dealId,
+        pendingStatusUpdate.newStatusId
+      );
+    } finally {
+      setUpdatingStatusDealId(null);
+      setPendingStatusUpdate(null);
+    }
+  }, [pendingStatusUpdate, dealData]);
+
+  const handleCancelStatusUpdate = useCallback(() => {
+    setConfirmDialogOpen(false);
+    setPendingStatusUpdate(null);
+  }, []);
+
   const handleOpenPayment = useCallback((deal: Deal) => {
     setSelectedDealForPayment(deal);
     setIsPaymentModalOpen(true);
   }, []);
 
-  // Handle close payment modal
   const handleClosePayment = useCallback(() => {
     setIsPaymentModalOpen(false);
     setSelectedDealForPayment(null);
   }, []);
 
-  // Handle payment save
   const handlePaymentSave = useCallback(() => {
     handleClosePayment();
     dealData.loadDeals(filters.filterSearch, filters.getFilters());
   }, [handleClosePayment, dealData, filters]);
 
-  // Handle close payment list modal
   const handleClosePaymentList = useCallback(() => {
     setIsPaymentListModalOpen(false);
     setSelectedDealForList(null);
   }, []);
 
-  // Handle payment list update
   const handlePaymentListUpdate = useCallback(() => {
     dealData.loadDeals(filters.filterSearch, filters.getFilters());
   }, [dealData, filters]);
 
-  // Check if deal status is "Hoàn tất"
   const isCompletedStatus = useCallback((statusName: string) => {
     return statusName === "Đã kí hợp đồng" || statusName === "Đã kí hợp đồng";
   }, []);
 
-  // Format currency
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -159,7 +197,6 @@ const DealList: React.FC = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 p-4 md:p-6">
-      {/* Header */}
       <Breadcrumb />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -176,27 +213,59 @@ const DealList: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filter Component */}
-      <Filter
-        config={{
-          search: {
-            placeholder: "Tìm kiếm theo tên khách hàng hoặc số điện thoại...",
-            value: filters.filterSearch,
-            onChange: filters.setFilterSearch,
-          },
-          status: {
-            options: filters.statusOptions,
-            value: filters.filterStatus,
-            onChange: filters.setFilterStatus,
-          },
-        }}
-        onReset={handleFilterReset}
-        onApply={handleFilterApply}
-        onRefresh={() =>
-          dealData.loadDeals(filters.filterSearch, filters.getFilters())
-        }
-        loading={dealData.loading}
-      />
+      <Card>
+        <CardContent className="p-4 md:p-6">
+          <div className="space-y-4">
+            {/* Search Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Tìm kiếm khách hàng
+                </label>
+                <Input
+                  placeholder="Tìm theo tên hoặc số điện thoại..."
+                  value={filters.filterSearch}
+                  onChange={(e) => filters.setFilterSearch(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Tìm kiếm theo alias căn hộ
+                </label>
+                <Input
+                  placeholder="Nhập alias căn hộ..."
+                  value={filters.filterAlias}
+                  onChange={(e) => filters.setFilterAlias(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Trạng thái
+              </label>
+              <Filter
+                config={{
+                  status: {
+                    options: filters.statusOptions,
+                    value: filters.filterStatus,
+                    onChange: filters.setFilterStatus,
+                  },
+                }}
+                onReset={handleFilterReset}
+                onApply={handleFilterApply}
+                onRefresh={() =>
+                  dealData.loadDeals(filters.filterSearch, filters.getFilters())
+                }
+                loading={dealData.loading}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Deals Table */}
       <Card>
@@ -216,6 +285,9 @@ const DealList: React.FC = () => {
                       Số điện thoại
                     </TableHead>
                     <TableHead className="min-w-[120px]">Căn hộ</TableHead>
+                    <TableHead className="min-w-[150px] hidden md:table-cell">
+                      Alias
+                    </TableHead>
                     <TableHead className="min-w-[130px] hidden lg:table-cell">
                       Trạng thái
                     </TableHead>
@@ -238,7 +310,7 @@ const DealList: React.FC = () => {
                   {dealData.deals.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={9}
+                        colSpan={10}
                         className="text-center py-8 text-gray-500"
                       >
                         Chưa có giao dịch nào
@@ -272,6 +344,11 @@ const DealList: React.FC = () => {
                               {deal.apartmentName || deal.apartmentId}
                             </span>
                           </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <span className="text-sm text-gray-600 font-mono">
+                            {deal.apartmentAlias || "-"}
+                          </span>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
                           <DealStatusSelector
@@ -343,7 +420,6 @@ const DealList: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Deal Modal */}
       <DealModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
@@ -351,7 +427,6 @@ const DealList: React.FC = () => {
         deal={editingDeal}
       />
 
-      {/* Deal Payment Modal (Quick create) */}
       <DealPaymentModal
         isOpen={isPaymentModalOpen}
         onClose={handleClosePayment}
@@ -359,13 +434,45 @@ const DealList: React.FC = () => {
         deal={selectedDealForPayment}
       />
 
-      {/* Deal Payment List Modal (View & Edit) */}
       <DealPaymentListModal
         isOpen={isPaymentListModalOpen}
         onClose={handleClosePaymentList}
         onUpdate={handlePaymentListUpdate}
         deal={selectedDealForList}
       />
+
+      {/* Confirm Status Update Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận cập nhật trạng thái</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn cập nhật trạng thái giao dịch sang{" "}
+              <span className="font-semibold text-gray-900">
+                "{pendingStatusUpdate?.newStatusName}"
+              </span>
+              ?
+              {(pendingStatusUpdate?.newStatusName === "Đã kí hợp đồng" ||
+                pendingStatusUpdate?.newStatusName === "Huỷ giao dịch") && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    ⚠️ Lưu ý: Sau khi cập nhật sang trạng thái này, bạn sẽ không
+                    thể thay đổi trạng thái nữa.
+                  </p>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelStatusUpdate}>
+              Hủy
+            </Button>
+            <Button onClick={handleConfirmStatusUpdate}>
+              Xác nhận
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

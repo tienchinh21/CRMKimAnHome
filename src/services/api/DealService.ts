@@ -4,6 +4,7 @@ export interface Deal {
   id: string;
   apartmentId: string;
   apartmentName?: string;
+  apartmentAlias?: string;
   customerId: string;
   customerName?: string;
   customerPhone?: string;
