@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, Eye, Trash2, Building2, Globe, Lock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Home, Eye, Trash2, Building2, Globe, Lock, Edit2, Check, X } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -24,9 +25,15 @@ const ApartmentsList: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Permission checks
-  const { can } = usePermission();
+  const { can, isRole, role } = usePermission();
   const canCreate = can(PERMISSIONS.APARTMENT_CREATE);
   const canDelete = can(PERMISSIONS.APARTMENT_DELETE);
+
+  // Check if user is LEADER or SALE to hide certain columns
+  const isLeaderOrSale = isRole(["LEADER", "SALE"]);
+
+  // Check if user is MARKET/SUPERMARKET/MANAGER to use market endpoint
+  const isMarketRole = role === "MARKET" || role === "SUPERMARKET" || role === "MANAGER";
 
   // Filter states
   const [search, setSearch] = useState("");
@@ -41,13 +48,22 @@ const ApartmentsList: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Note editing states
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteValue, setEditingNoteValue] = useState("");
+
   const loadApartments = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await ApartmentService.getWithPagination(
-        currentPage - 1, // API uses 0-based pagination
-        itemsPerPage
-      );
+
+      const response = isMarketRole
+        ? await ApartmentService.getMarket({
+            pageable: { page: currentPage - 1, size: itemsPerPage },
+          })
+        : await ApartmentService.getWithPagination(
+            currentPage - 1,
+            itemsPerPage
+          );
 
       // Handle pagination response
       if (
@@ -73,7 +89,7 @@ const ApartmentsList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, isMarketRole]);
 
   useEffect(() => {
     loadApartments();
@@ -82,7 +98,7 @@ const ApartmentsList: React.FC = () => {
   // Build filter options based on loaded apartments
   const projectOptions = useMemo(() => {
     const set = new Set<string>();
-    apartments.forEach((apt) => apt.projectId && set.add(apt.projectId));
+    apartments.forEach((apt) => apt.project?.id && set.add(apt.project.id));
     const projectList = Array.from(set).map((p) => ({
       value: p,
       label: `Project ${p.slice(0, 8)}...`,
@@ -122,13 +138,14 @@ const ApartmentsList: React.FC = () => {
 
   const filteredApartments = useMemo(() => {
     return apartments.filter((apt) => {
-      const matchSearch = `${apt.name} ${apt.alias}`
+      const matchSearch = `${apt.name || ""} ${apt.alias}`
         .toLowerCase()
         .includes(search.toLowerCase());
       const matchProject =
-        projectFilter === "all" || apt.projectId === projectFilter;
+        projectFilter === "all" || apt.project?.id === projectFilter;
       // Convert status to string for comparison (API returns number)
-      const matchStatus = statusFilter === "all" || String(apt.status) === statusFilter;
+      const matchStatus =
+        statusFilter === "all" || String(apt.status) === statusFilter;
       const matchType =
         typeFilter === "all" ||
         (typeFilter === "sell" && apt.isSell) ||
@@ -166,7 +183,7 @@ const ApartmentsList: React.FC = () => {
       ) {
         try {
           await ApartmentService.delete(apartment.id);
-          loadApartments(); 
+          loadApartments();
         } catch (error) {
           toast.error("Có lỗi xảy ra khi xóa căn hộ");
         }
@@ -181,11 +198,37 @@ const ApartmentsList: React.FC = () => {
 
   const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   }, []);
 
-  const columns: Column<ReponseApartmentDto>[] = useMemo(
-    () => [
+  const handleEditNote = useCallback((apartment: ReponseApartmentDto) => {
+    setEditingNoteId(apartment.id);
+    setEditingNoteValue(apartment.note || "");
+  }, []);
+
+  const handleSaveNote = useCallback(
+    async (apartmentId: string) => {
+      try {
+        await ApartmentService.updateNote(apartmentId, editingNoteValue);
+        toast.success("Cập nhật ghi chú thành công");
+        setEditingNoteId(null);
+        setEditingNoteValue("");
+        loadApartments();
+      } catch (error) {
+        console.error("❌ Error updating note:", error);
+        toast.error("Có lỗi xảy ra khi cập nhật ghi chú");
+      }
+    },
+    [editingNoteValue, loadApartments]
+  );
+
+  const handleCancelEditNote = useCallback(() => {
+    setEditingNoteId(null);
+    setEditingNoteValue("");
+  }, []);
+
+  const columns: Column<ReponseApartmentDto>[] = useMemo(() => {
+    const allColumns: Column<ReponseApartmentDto>[] = [
       {
         key: "name",
         header: "Tên căn hộ",
@@ -325,9 +368,80 @@ const ApartmentsList: React.FC = () => {
           </div>
         ),
       },
-    ],
-    []
-  );
+      {
+        key: "note",
+        header: "Ghi chú",
+        className: "min-w-[200px]",
+        render: (apt) => {
+          const isEditing = editingNoteId === apt.id;
+
+          if (isEditing) {
+            return (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editingNoteValue}
+                  onChange={(e) => setEditingNoteValue(e.target.value)}
+                  className="h-8 text-sm"
+                  placeholder="Nhập ghi chú..."
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSaveNote(apt.id);
+                    } else if (e.key === "Escape") {
+                      handleCancelEditNote();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={() => handleSaveNote(apt.id)}
+                >
+                  <Check className="h-4 w-4 text-green-600" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={handleCancelEditNote}
+                >
+                  <X className="h-4 w-4 text-red-600" />
+                </Button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex items-center gap-2 group">
+              <span className="text-sm text-gray-700 flex-1 truncate">
+                {apt.note || (
+                  <span className="text-gray-400 italic">Chưa có ghi chú</span>
+                )}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleEditNote(apt)}
+              >
+                <Edit2 className="h-4 w-4 text-gray-600" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ];
+
+    // Nếu role là LEADER hoặc SALE, ẩn các cột: Tên căn hộ, Giá công khai, Hiển thị, Ghi chú
+    if (isLeaderOrSale) {
+      return allColumns.filter(
+        (col) => !["name", "publicPrice", "isPublic", "note"].includes(col.key)
+      );
+    }
+
+    return allColumns;
+  }, [isLeaderOrSale, editingNoteId, editingNoteValue, handleEditNote, handleSaveNote, handleCancelEditNote]);
 
   if (loading) {
     return (

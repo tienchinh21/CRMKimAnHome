@@ -46,50 +46,66 @@ export interface UpdateApartmentPayload {
 
 export interface ReponseApartmentDto {
   id: string;
-  name: string;
-  publicPrice: string;
+  name?: string;
+  publicPrice?: string;
   privatePrice: string;
+  detailedDescription?: string;
   area: string;
-  numberBedroom: string; 
-  numberBathroom: string; 
-  mainImage: string;
-  projectId: string;
-  slug: string;
-  isSell: boolean;
-  status: string; 
-  alias: string;
-  isPublic: boolean;
-  ownerName: string;
-  ownerPhone: string;
-  projectName?: string;
-}
-
-export interface ReponseDetailApartmentDto {
-  id: string;
-  name: string;
-  publicPrice: string;
-  privatePrice: string;
-  detailedDescription: string;
-  area: string;
-  numberBedroom: string; 
-  numberBathroom: string; 
-  floor: string; 
+  numberBedroom: number;
+  numberBathroom: number;
+  floor: number;
   direction: string;
   interior: string;
-  status: string; 
+  status: number;
   isSell: boolean;
-  projectId: string;
-  mainImage: string;
-  images: string[];
-  slug: string;
-  alias: string;
-  ownerName: string;
-  ownerPhone: string;
   project: {
     id: string;
     name: string;
   };
-  isPublic: boolean;
+  mainImage: string;
+  images: string[];
+  slug: string;
+  alias: string;
+  note?: string;
+  isPublic?: boolean;
+  ownerName?: string;
+  ownerPhone?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
+export interface ReponseDetailApartmentDto {
+  id: string;
+  name?: string;
+  publicPrice?: string;
+  privatePrice: string;
+  detailedDescription?: string;
+  area: string;
+  numberBedroom: string;
+  numberBathroom: string;
+  floor: string;
+  direction: string;
+  interior: string;
+  status: number;
+  isSell: boolean;
+  project: {
+    id: string;
+    name: string;
+  };
+  mainImage: string;
+  images: string[];
+  slug: string;
+  alias: string;
+  note?: string;
+  isPublic?: boolean;
+  ownerName?: string;
+  ownerPhone?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface CreateApartmentDto {

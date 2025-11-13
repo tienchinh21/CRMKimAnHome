@@ -52,10 +52,50 @@ const ApartmentService = {
     return { ...response, data: extractData(response) };
   },
 
-  async getById(id: string): Promise<RestResponse<ReponseDetailApartmentDto>> {
+  async getMarket(params?: ApartmentListParams) {
+    const queryParams = new URLSearchParams();
+
+    if (params?.pageable) {
+      if (params.pageable.page !== undefined) {
+        queryParams.append("pageable.page", params.pageable.page.toString());
+      }
+      if (params.pageable.size !== undefined) {
+        queryParams.append("pageable.size", params.pageable.size.toString());
+      }
+      if (params.pageable.sort) {
+        params.pageable.sort.forEach((sort) => {
+          queryParams.append("pageable.sort", sort);
+        });
+      }
+    }
+
+    if (params?.filter) {
+      queryParams.append("filter", params.filter);
+    }
+
     const response = await axiosClient.get(
-      `/apartments/id/${id}`
+      `/apartments/market?${queryParams.toString()}`
     );
+    return { ...response, data: extractData(response) };
+  },
+
+  async getById(
+    id: string,
+    userRole?: string
+  ): Promise<RestResponse<ReponseDetailApartmentDto>> {
+    let endpoint = `/apartments/id/${id}`;
+
+    if (userRole === "LEADER" || userRole === "SALE") {
+      endpoint = `/apartments/id/${id}/user`;
+    } else if (
+      userRole === "MARKET" ||
+      userRole === "SUPERMARKET" ||
+      userRole === "MANAGER"
+    ) {
+      endpoint = `/apartments/id/${id}/market`;
+    }
+
+    const response = await axiosClient.get(endpoint);
     return response.data;
   },
 
@@ -168,6 +208,19 @@ const ApartmentService = {
   async deleteLegal(legalId: string) {
     const response = await axiosClient.delete(
       `/legals/${legalId}`
+    );
+    return { ...response, data: extractData(response) };
+  },
+
+  async updateNote(id: string, note: string): Promise<RestResponse<void>> {
+    const response = await axiosClient.patch(
+      `/apartments/${id}/note`,
+      note,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
     return { ...response, data: extractData(response) };
   },

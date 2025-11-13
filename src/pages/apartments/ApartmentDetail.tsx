@@ -37,7 +37,7 @@ import { formatCurrency } from "@/utils/format";
 import { usePermission } from "@/hooks/usePermission";
 
 const ApartmentDetail: React.FC = () => {
-  const { isRole, can } = usePermission();
+  const { isRole, can, role } = usePermission();
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -103,7 +103,14 @@ const ApartmentDetail: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await ApartmentService.getById(id);
+
+      const userRole = role === "LEADER" || role === "SALE"
+        ? "LEADER"
+        : role === "MARKET" || role === "SUPERMARKET" || role === "MANAGER"
+        ? "MARKET"
+        : undefined;
+
+      const response = await ApartmentService.getById(id, userRole);
 
       if (response.content) {
         setApartment(response.content);
@@ -143,7 +150,7 @@ const ApartmentDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, loadLegals]);
+  }, [id, loadLegals, role]);
 
   useEffect(() => {
     loadApartmentDetail();
@@ -225,7 +232,7 @@ const ApartmentDetail: React.FC = () => {
         direction: apartment.direction || "",
         interior: apartment.interior || "",
         status: apartment.status?.toString() || "0",
-        projectId: apartment.projectId || "",
+        projectId: apartment.project.id || "",
         isSell: apartment.isSell || true,
         alias: apartment.alias || "",
         isPublic: apartment.isPublic || false,
@@ -417,7 +424,7 @@ const ApartmentDetail: React.FC = () => {
               <div>
                 <Breadcrumb />
                 <h1 className="text-2xl font-bold text-gray-900 mt-1">
-                  {apartment.name}
+                  {apartment.name || apartment.alias || "Chi tiết căn hộ"}
                 </h1>
               </div>
             </div>
@@ -572,20 +579,22 @@ const ApartmentDetail: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">
-                        Tên căn hộ
-                      </label>
-                      <input
-                        type="text"
-                        value={editData.name}
-                        onChange={(e) =>
-                          handleInputChange("name", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                        placeholder="Nhập tên căn hộ..."
-                      />
-                    </div>
+                    {isRole(["MARKET", "SUPERMARKET", "MANAGER"]) && (
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Tên căn hộ
+                        </label>
+                        <input
+                          type="text"
+                          value={editData.name}
+                          onChange={(e) =>
+                            handleInputChange("name", e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          placeholder="Nhập tên căn hộ..."
+                        />
+                      </div>
+                    )}
 
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-700">
@@ -602,28 +611,30 @@ const ApartmentDetail: React.FC = () => {
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">
-                        Giá công khai
-                      </label>
-                      <input
-                        type="text"
-                        value={
-                          editData.publicPrice
-                            ? formatCurrency(editData.publicPrice)
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const cleanValue = e.target.value.replace(
-                            /[^\d]/g,
-                            ""
-                          );
-                          handleInputChange("publicPrice", cleanValue);
-                        }}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                        placeholder="Nhập giá công khai..."
-                      />
-                    </div>
+                    {isRole(["MARKET", "SUPERMARKET", "MANAGER"]) && (
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Giá công khai
+                        </label>
+                        <input
+                          type="text"
+                          value={
+                            editData.publicPrice
+                              ? formatCurrency(editData.publicPrice)
+                              : ""
+                          }
+                          onChange={(e) => {
+                            const cleanValue = e.target.value.replace(
+                              /[^\d]/g,
+                              ""
+                            );
+                            handleInputChange("publicPrice", cleanValue);
+                          }}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          placeholder="Nhập giá công khai..."
+                        />
+                      </div>
+                    )}
 
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-700">
@@ -828,54 +839,58 @@ const ApartmentDetail: React.FC = () => {
                       />
                     </div>
 
-                    {/* Owner Information */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-700">
-                          Tên chủ căn hộ <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={editData.ownerName}
-                          onChange={(e) =>
-                            handleInputChange("ownerName", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          placeholder="Nhập tên chủ căn hộ..."
-                        />
+                    {/* Owner Information - Only for MARKET/SUPERMARKET/MANAGER */}
+                    {isRole(["MARKET", "SUPERMARKET", "MANAGER"]) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-sm font-medium text-gray-700">
+                            Tên chủ căn hộ <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={editData.ownerName}
+                            onChange={(e) =>
+                              handleInputChange("ownerName", e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                            placeholder="Nhập tên chủ căn hộ..."
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-sm font-medium text-gray-700">
+                            Số điện thoại <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="tel"
+                            value={editData.ownerPhone}
+                            onChange={(e) =>
+                              handleInputChange("ownerPhone", e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                            placeholder="Nhập số điện thoại..."
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-700">
-                          Số điện thoại <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="tel"
-                          value={editData.ownerPhone}
-                          onChange={(e) =>
-                            handleInputChange("ownerPhone", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          placeholder="Nhập số điện thoại..."
-                        />
-                      </div>
-                    </div>
+                    )}
 
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">
-                        Mô tả chi tiết
-                      </label>
-                      <QuillEditor
-                        key={`inline-editor-${apartment.id}`}
-                        value={editData.detailedDescription || ""}
-                        onChange={(content) =>
-                          handleInputChange("detailedDescription", content)
-                        }
-                        placeholder="Nhập mô tả chi tiết..."
-                        disableImageUpload={true}
-                        showWordCount={true}
-                        className="min-h-[300px]"
-                      />
-                    </div>
+                    {isRole(["MARKET", "SUPERMARKET", "MANAGER"]) && (
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Mô tả chi tiết
+                        </label>
+                        <QuillEditor
+                          key={`inline-editor-${apartment.id}`}
+                          value={editData.detailedDescription || ""}
+                          onChange={(content) =>
+                            handleInputChange("detailedDescription", content)
+                          }
+                          placeholder="Nhập mô tả chi tiết..."
+                          disableImageUpload={true}
+                          showWordCount={true}
+                          className="min-h-[300px]"
+                        />
+                      </div>
+                    )}
 
                     {/* Legal Information - Chỉ hiển thị trong edit mode */}
                     <div className="space-y-4">
@@ -972,9 +987,11 @@ const ApartmentDetail: React.FC = () => {
               ) : (
                 <div className="space-y-6">
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                      {apartment.name}
-                    </h1>
+                    {apartment.name && (
+                      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                        {apartment.name}
+                      </h1>
+                    )}
                     <p className="text-gray-500 text-sm mb-4">
                       <span className="font-medium">Mã căn hộ: </span>
                       {apartment.alias || "Chưa cập nhật"}
@@ -989,31 +1006,33 @@ const ApartmentDetail: React.FC = () => {
 
                   {/* Property Details Grid */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
-                      <div className="w-5 h-5 flex items-center justify-center">
-                        <svg
-                          className="w-5 h-5 text-green-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                          />
-                        </svg>
+                    {apartment.publicPrice && (
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
+                        <div className="w-5 h-5 flex items-center justify-center">
+                          <svg
+                            className="w-5 h-5 text-green-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-600">
+                            Giá công khai
+                          </span>
+                          <p className="font-semibold text-green-600">
+                            {formatCurrency(apartment.publicPrice)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-sm text-gray-600">
-                          Giá công khai
-                        </span>
-                        <p className="font-semibold text-green-600">
-                          {formatCurrency(apartment.publicPrice)}
-                        </p>
-                      </div>
-                    </div>
+                    )}
 
                     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
                       <div className="w-5 h-5 flex items-center justify-center">
@@ -1100,18 +1119,35 @@ const ApartmentDetail: React.FC = () => {
                         {statusInfo.label}
                       </Badge>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
-                      <span className="text-sm text-gray-600">Hiển thị</span>
-                      <Badge
-                        className={`px-3 py-1 text-sm font-medium rounded-full ${
-                          apartment.isPublic
-                            ? "bg-green-100 text-green-800 border-green-200"
-                            : "bg-gray-100 text-gray-800 border-gray-200"
-                        }`}
-                      >
-                        {apartment.isPublic ? "Công khai" : "Riêng tư"}
-                      </Badge>
-                    </div>
+                    {apartment.isPublic !== undefined && (
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                        <span className="text-sm text-gray-600">Hiển thị</span>
+                        <Badge
+                          className={`px-3 py-1 text-sm font-medium rounded-full ${
+                            apartment.isPublic
+                              ? "bg-green-100 text-green-800 border-green-200"
+                              : "bg-gray-100 text-gray-800 border-gray-200"
+                          }`}
+                        >
+                          {apartment.isPublic ? "Công khai" : "Riêng tư"}
+                        </Badge>
+                      </div>
+                    )}
+                    {apartment.ownerName && apartment.ownerPhone && (
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                        <span className="text-sm text-gray-600">Chủ căn hộ</span>
+                        <div className="text-right">
+                          <p className="font-medium">{apartment.ownerName}</p>
+                          <p className="text-sm text-gray-500">{apartment.ownerPhone}</p>
+                        </div>
+                      </div>
+                    )}
+                    {apartment.note && (
+                      <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <span className="text-sm font-medium text-yellow-800">Ghi chú:</span>
+                        <p className="text-sm text-yellow-700 mt-1">{apartment.note}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Legal Information - Chỉ hiển thị trong view mode */}
@@ -1182,21 +1218,23 @@ const ApartmentDetail: React.FC = () => {
           )}
 
           {/* Description */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Mô tả chi tiết
-              </h2>
+          {apartment.detailedDescription && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Mô tả chi tiết
+                </h2>
+              </div>
+              <div className="p-6">
+                <div
+                  className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: apartment.detailedDescription,
+                  }}
+                />
+              </div>
             </div>
-            <div className="p-6">
-              <div
-                className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: apartment.detailedDescription,
-                }}
-              />
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
